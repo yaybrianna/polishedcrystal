@@ -40,13 +40,13 @@ jobs:
         mv polishedcrystal-3.0.0-beta.sym build/polishedcrystal-3.0.0-faithful-debug-beta.sym
         make tidy
         popd
-    - name: Delete old release
-      id: delete_release
-      uses: jagger27/delete-release@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v3.0.0-beta-nightly
+#    - name: Delete old release
+#      id: delete_release
+#      uses: jagger27/delete-release@master
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        tag_name: v3.0.0-beta-nightly
     - name: Advance nightly tag to master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
