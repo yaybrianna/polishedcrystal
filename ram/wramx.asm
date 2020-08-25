@@ -353,7 +353,6 @@ wPokemonWithdrawDepositParameter::
 ; 3: Put into Day-Care
 	db
 
-wIsCurMonInParty::
 wItemQuantityChangeBuffer:: db
 wItemQuantityBuffer:: db
 
@@ -365,6 +364,7 @@ wSpriteFlags::
 	db
 
 wHandlePlayerStep:: db
+
 	ds 1
 
 wPartyMenuActionText:: db
@@ -720,7 +720,9 @@ wWildEncounterCooldown:: db
 
 wWildBattlePanic:: db
 
-wBattleScriptFlags:: dw
+wBattleScriptFlags:: db
+wWildMonForm:: db
+
 wPlayerSpriteSetupFlags::
 ; bit 7: if set, cancel wPlayerAction
 ; bit 6: RefreshMapSprites doesn't reload player sprite
