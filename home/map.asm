@@ -212,8 +212,8 @@ CopyWarpData::
 	scf
 	ret
 
-CheckOutdoorMapOrEnvironment5::
-	cp ENVIRONMENT_5
+CheckOutdoorOrIsolatedMap::
+	cp ISOLATED
 	ret z
 CheckOutdoorMap::
 	cp ROUTE
@@ -889,13 +889,13 @@ MapTextbox::
 	rst Bankswitch
 
 	push hl
-	call SpeechTextBox
+	call SpeechTextbox
 	call SafeUpdateSprites
 	ld a, 1
 	ldh [hOAMUpdate], a
 	call ApplyTilemap
 	pop hl
-	call PrintTextBoxText
+	call PrintTextboxText
 	xor a
 	ldh [hOAMUpdate], a
 
@@ -1042,208 +1042,6 @@ ReloadWalkedTile:
 	ld h, a
 	dec c
 	ret
-
-ScrollMapDown::
-	call ReloadWalkedTile
-	hlcoord 0, 0
-	ld de, wBGMapBuffer + 8
-	call BackupBGMapRow
-	hlcoord 0, 0, wAttrMap
-	ld de, wBGMapPalBuffer + 8
-	call BackupBGMapRow
-	ld a, [wBGMapAnchor]
-	ld e, a
-	ld a, [wBGMapAnchor + 1]
-	ld d, a
-	call UpdateBGMapRow
-	ld a, $1
-	ldh [hBGMapUpdate], a
-	ret
-
-ScrollMapUp::
-	call ReloadWalkedTile
-	hlcoord 0, SCREEN_HEIGHT - 2
-	ld de, wBGMapBuffer + 8
-	call BackupBGMapRow
-	hlcoord 0, SCREEN_HEIGHT - 2, wAttrMap
-	ld de, wBGMapPalBuffer + 8
-	call BackupBGMapRow
-	ld hl, wBGMapAnchor
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
-	ld bc, $0200
-	add hl, bc
-; cap d at HIGH(vBGMap1)
-	ld a, h
-	and %00000011
-	or HIGH(vBGMap0)
-	ld e, l
-	ld d, a
-	call UpdateBGMapRow
-	ld a, $1
-	ldh [hBGMapUpdate], a
-	ret
-
-ScrollMapRight::
-	call ReloadWalkedTile
-	hlcoord 0, 0
-	ld de, wBGMapBuffer + 8
-	call BackupBGMapColumn
-	hlcoord 0, 0, wAttrMap
-	ld de, wBGMapPalBuffer + 8
-	call BackupBGMapColumn
-	ld a, [wBGMapAnchor]
-	ld e, a
-	ld a, [wBGMapAnchor + 1]
-	ld d, a
-	call UpdateBGMapColumn
-	ld a, $1
-	ldh [hBGMapUpdate], a
-	ret
-
-ScrollMapLeft::
-	call ReloadWalkedTile
-	hlcoord SCREEN_WIDTH - 2, 0
-	ld de, wBGMapBuffer + 8
-	call BackupBGMapColumn
-	hlcoord SCREEN_WIDTH - 2, 0, wAttrMap
-	ld de, wBGMapPalBuffer + 8
-	call BackupBGMapColumn
-	ld a, [wBGMapAnchor]
-
-	; add SCREEN_HEIGHT, but wrap-around the last 5 bits
-	swap a
-	rrca
-	add SCREEN_HEIGHT << 3
-	rlca
-	swap a
-	ld e, a
-	ld a, [wBGMapAnchor + 1]
-	ld d, a
-	call UpdateBGMapColumn
-	ld a, $1
-	ldh [hBGMapUpdate], a
-	ret
-
-BackupBGMapRow::
-	ld c, 2 * SCREEN_WIDTH
-.loop
-	ld a, [hli]
-	ld [de], a
-	inc de
-	dec c
-	jr nz, .loop
-	ret
-
-BackupBGMapColumn::
-	ld c, SCREEN_HEIGHT
-.loop
-	ld a, [hli]
-	ld [de], a
-	inc de
-	ld a, [hl]
-	ld [de], a
-	inc de
-	ld a, SCREEN_WIDTH - 1
-	; hl += a
-	add l
-	ld l, a
-	adc h
-	sub l
-	ld h, a
-	dec c
-	jr nz, .loop
-	ret
-
-UpdateBGMapRow::
-	ld hl, wBGMapBufferPtrs + 8
-	push de
-	call .iteration
-	pop de
-	ld a, BG_MAP_WIDTH
-	add e
-	ld e, a
-
-.iteration
-	ld c, 10
-.loop
-	ld a, e
-	ld [hli], a
-	ld a, d
-	ld [hli], a
-	ld a, e
-	inc a
-	inc a
-	and $1f
-	ld b, a
-	ld a, e
-	and $e0
-	or b
-	ld e, a
-	dec c
-	jr nz, .loop
-	ld a, SCREEN_WIDTH + 4
-	ldh [hBGMapTileCount], a
-	ret
-
-UpdateBGMapColumn::
-	ld hl, wBGMapBufferPtrs + 8
-	ld c, SCREEN_HEIGHT
-.loop
-	ld a, e
-	ld [hli], a
-	ld a, d
-	ld [hli], a
-	ld a, BG_MAP_HEIGHT
-	add e
-	ld e, a
-	jr nc, .skip
-	inc d
-; cap d at HIGH(vBGMap1)
-	ld a, d
-	and %11
-	or HIGH(vBGMap0)
-	ld d, a
-
-.skip
-	dec c
-	jr nz, .loop
-	ld a, SCREEN_HEIGHT + 4
-	ldh [hBGMapTileCount], a
-	ret
-
-LoadMapGraphicsAndDelay::
-	push hl
-	push de
-	push bc
-	ldh a, [rVBK]
-	push af
-	xor a
-	ldh [hDelayFrameLY], a
-
-	; only allow this if we have time to spare
-	ldh a, [rLY]
-	cp $20
-	jr nc, .done
-
-	ld a, [wPendingOverworldGraphics]
-	and a
-	jr z, .done
-
-	dec a
-	ld [wPendingOverworldGraphics], a
-	call _LoadTilesetGFX
-	xor a
-	ldh [hTileAnimFrame], a
-
-.done
-	ldh a, [hDelayFrameLY]
-	and a
-	call z, DelayFrame
-	pop af
-	ldh [rVBK], a
-	jp PopBCDEHL
 
 _LoadTilesetGFX:
 ; Loads one of up to 3 tileset groups depending on a
@@ -1481,11 +1279,10 @@ GetMovementPermissions::
 
 	ld a, [wPlayerStandingTile]
 	and 7
-	ld hl, .MovementPermissionsData
-	; hl += a
-	add l
+	; a = [.MovementPermissionsData + a]
+	add LOW(.MovementPermissionsData)
 	ld l, a
-	adc h
+	adc HIGH(.MovementPermissionsData)
 	sub l
 	ld h, a
 	ld a, [hl]
@@ -1881,7 +1678,7 @@ ReturnToMapWithSpeechTextbox::
 	call ReloadTilesetAndPalettes
 	hlcoord 0, 12
 	lb bc, 4, 18
-	call TextBox
+	call Textbox
 	ld hl, wVramState
 	set 0, [hl]
 	call UpdateSprites
@@ -1970,21 +1767,14 @@ GetMapField::
 	ld a, [wMapNumber]
 	ld c, a
 GetAnyMapField::
-	; bankswitch
-	ldh a, [hROMBank]
-	push af
-	ld a, BANK(MapGroupPointers)
-	rst Bankswitch
+	anonbankpush MapGroupPointers
 
+.Function:
 	call GetAnyMapPointer
 	add hl, de
 	ld c, [hl]
 	inc hl
 	ld b, [hl]
-
-	; bankswitch back
-	pop af
-	rst Bankswitch
 	ret
 
 SwitchToMapAttributesBank::
@@ -2010,18 +1800,13 @@ GetAnyMapAttributesBank::
 CopyMapPartial::
 ; Copy map data bank, tileset, permission, and map data address
 ; from the current map's entry within its group.
-	ldh a, [hROMBank]
-	push af
-	ld a, BANK(MapGroupPointers)
-	rst Bankswitch
+	anonbankpush MapGroupPointers
 
+.Function:
 	call GetMapPointer
 	ld de, wMapAttributesBank
 	ld bc, wMapPartialEnd - wMapPartial
 	rst CopyBytes
-
-	pop af
-	rst Bankswitch
 	ret
 
 SwitchToMapScriptsBank::
@@ -2126,6 +1911,22 @@ GetBackupLandmark::
 	ld a, [wBackupMapNumber]
 	ld c, a
 	jp GetWorldMapLocation
+
+RandomRegionCheck::
+; Returns current region, like RegionCheck, except that Mt. Silver and Route 28
+; is considered Kanto or Johto at random.
+; e returns 0 in Johto, 1 in Kanto and 2 in Shamouti Island.
+	call GetCurrentLandmark
+	cp SILVER_CAVE
+	jr z, .random
+	cp ROUTE_28
+	jr nz, RegionCheck
+	; fallthrough
+.random
+	call Random
+	and 1
+	ld e, a
+	ret
 
 RegionCheck::
 ; Checks if the player is in Kanto or Johto.

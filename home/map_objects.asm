@@ -24,9 +24,8 @@ GetSpriteVTile::
 	cp SPRITE_BIG_GYARADOS
 	jr z, .use_last_struct
 	cp SPRITE_SAILBOAT
-	jr z, .use_last_struct
 	ldh a, [hObjectStructIndexBuffer]
-	jr .got_sprite_tile
+	jr nz, .got_sprite_tile
 .use_last_struct
 	ld a, NUM_OBJECT_STRUCTS - 1
 .got_sprite_tile
@@ -54,56 +53,25 @@ GetSpriteVTile::
 .using_vbk1
 	jp PopBCDEHL
 
-DoesSpriteHaveFacings::
-	push de
-	push hl
-
-	ld b, a
-	ldh a, [hROMBank]
-	push af
-	ld a, BANK(_DoesSpriteHaveFacings)
-	rst Bankswitch
-
-	ld a, b
-	call _DoesSpriteHaveFacings
-	ld c, a
-
-	pop de
-	ld a, d
-	rst Bankswitch
-
-	pop hl
-	pop de
-	ret
-
 GetPlayerStandingTile::
 	ld a, [wPlayerStandingTile]
 	; fallthrough
 
 GetTileCollision::
 ; Get the collision type of tile a.
-
-	push de
 	push hl
 
-	ld hl, TileCollisionTable
-	ld e, a
-	ld d, 0
-	add hl, de
+	add LOW(TileCollisionTable)
+	ld l, a
+	adc HIGH(TileCollisionTable)
+	sub l
+	ld h, a
 
-	ldh a, [hROMBank]
-	push af
 	ld a, BANK(TileCollisionTable)
-	rst Bankswitch
-	ld e, [hl]
-	pop af
-	rst Bankswitch
-
-	ld a, e
+	call GetFarByte
 	and $f ; lo nybble only
 
 	pop hl
-	pop de
 	ret
 
 GetMapObject::
@@ -276,7 +244,7 @@ LoadMovementDataPointer::
 
 	ld hl, OBJECT_STEP_TYPE
 	add hl, bc
-	ld [hl], STEP_TYPE_00
+	ld [hl], STEP_TYPE_RESET
 
 	ld hl, wVramState
 	set 7, [hl]
@@ -312,24 +280,6 @@ FindFirstEmptyObjectStruct::
 	pop bc
 	ret
 
-GetSpriteMovementFunction::
-	ld hl, OBJECT_MOVEMENTTYPE
-	add hl, bc
-	ld a, [hl]
-	cp NUM_SPRITEMOVEDATA
-	jr c, .ok
-	xor a
-
-.ok
-	ld hl, SpriteMovementData
-	ld e, a
-	ld d, 0
-rept NUM_SPRITEMOVEDATA_FIELDS
-	add hl, de
-endr
-	ld a, [hl]
-	ret
-
 GetInitialFacing::
 	push bc
 	push de
@@ -346,73 +296,6 @@ endr
 	and $c
 	pop de
 	pop bc
-	ret
-
-CopySpriteMovementData::
-	ld l, a
-	ldh a, [hROMBank]
-	push af
-	ld a, BANK(SpriteMovementData)
-	rst Bankswitch
-	ld a, l
-	push bc
-
-	call .CopyData
-
-	pop bc
-	pop af
-	rst Bankswitch
-
-	ret
-
-.CopyData:
-	ld hl, OBJECT_MOVEMENTTYPE
-	add hl, de
-	ld [hl], a
-
-	push de
-	ld e, a
-	ld d, 0
-	ld hl, SpriteMovementData + 1 ; init facing
-rept NUM_SPRITEMOVEDATA_FIELDS
-	add hl, de
-endr
-	ld b, h
-	ld c, l
-	pop de
-
-	ld a, [bc]
-	inc bc
-	rlca
-	rlca
-	and %00001100
-	ld hl, OBJECT_FACING
-	add hl, de
-	ld [hl], a
-
-	ld a, [bc]
-	inc bc
-	ld hl, OBJECT_ACTION
-	add hl, de
-	ld [hl], a
-
-	ld a, [bc]
-	inc bc
-	ld hl, OBJECT_FLAGS1
-	add hl, de
-	ld [hl], a
-
-	ld a, [bc]
-	inc bc
-	ld hl, OBJECT_FLAGS2
-	add hl, de
-	ld [hl], a
-
-	ld a, [bc]
-	inc bc
-	ld hl, OBJECT_PALETTE
-	add hl, de
-	ld [hl], a
 	ret
 
 _GetMovementByte::

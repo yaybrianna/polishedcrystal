@@ -3,12 +3,12 @@ RefreshScreen::
 	call ClearWindowData
 	ldh a, [hROMBank]
 	push af
-	ld a, BANK(ReanchorBGMap_NoOAMUpdate) ; BANK(LoadFonts_NoOAMUpdate)
+	ld a, BANK(ReanchorBGMap_NoOAMUpdate) ; aka BANK(LoadFonts_NoOAMUpdate)
 	rst Bankswitch
 
-	call ReanchorBGMap_NoOAMUpdate
+	call ReanchorBGMap_NoOAMUpdate ; far-ok
 	call BGMapAnchorTopLeft
-	call LoadFonts_NoOAMUpdate
+	call LoadFonts_NoOAMUpdate ; far-ok
 
 	pop af
 	rst Bankswitch
@@ -56,13 +56,13 @@ OpenText::
 	call ClearWindowData
 	ldh a, [hROMBank]
 	push af
-	ld a, BANK(ReanchorBGMap_NoOAMUpdate) ; and BANK(LoadFonts_NoOAMUpdate)
+	ld a, BANK(ReanchorBGMap_NoOAMUpdate) ; aka BANK(LoadFonts_NoOAMUpdate)
 	rst Bankswitch
 
-	call ReanchorBGMap_NoOAMUpdate
-	call SpeechTextBox
+	call ReanchorBGMap_NoOAMUpdate ; far-ok
+	call SpeechTextbox
 	call BGMapAnchorTopLeft
-	call LoadFonts_NoOAMUpdate
+	call LoadFonts_NoOAMUpdate ; far-ok
 	pop af
 	rst Bankswitch
 

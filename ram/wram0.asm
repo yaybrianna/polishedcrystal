@@ -223,7 +223,6 @@ wCurIconForm:: db
 wCurIconTile:: db
 
 wSpriteAnimAddrBackup::
-wSpriteAnimIDBuffer::
 wCurSpriteAddSubFlags::
 	dw
 wCurAnimVTile:: db
@@ -352,10 +351,6 @@ wOddEggName:: ds MON_NAME_LENGTH
 wOddEggOTName:: ds MON_NAME_LENGTH
 
 NEXTU
-; battle tower temp struct
-wBT_OTTemp:: battle_tower_struct wBT_OTTemp
-
-NEXTU
 ; hall of fame temp struct
 wHallOfFameTemp:: hall_of_fame wHallOfFameTemp
 
@@ -364,6 +359,11 @@ NEXTU
 wTimeSetBuffer:: ds 20
 wInitHourBuffer:: ds 13
 wInitMinuteBuffer:: ds 17
+
+NEXTU
+; link patch lists
+wPlayerPatchLists:: ds 200
+wOTPatchLists:: ds 200
 
 NEXTU
 ; link engine
@@ -787,20 +787,20 @@ wDiscardPileEnd::
 wCardFlipEnd::
 
 ;NEXTU
-;; dummy game
-;wDummyGame::
-;wDummyGameCards:: ds 9 * 5
-;wDummyGameCardsEnd::
-;wDummyGameLastCardPicked:: db
-;wDummyGameCard1:: db
-;wDummyGameCard2:: db
-;wDummyGameCard1Location:: db
-;wDummyGameCard2Location:: db
-;wDummyGameNumberTriesRemaining:: db
-;wDummyGameLastMatches:: ds 5
-;wDummyGameCounter:: db
-;wDummyGameNumCardsMatched:: db
-;wDummyGameEnd::
+;; memory game
+;wMemoryGame::
+;wMemoryGameCards:: ds 9 * 5
+;wMemoryGameCardsEnd::
+;wMemoryGameLastCardPicked:: db
+;wMemoryGameCard1:: db
+;wMemoryGameCard2:: db
+;wMemoryGameCard1Location:: db
+;wMemoryGameCard2Location:: db
+;wMemoryGameNumberTriesRemaining:: db
+;wMemoryGameLastMatches:: ds 5
+;wMemoryGameCounter:: db
+;wMemoryGameNumCardsMatched:: db
+;wMemoryGameEnd::
 
 NEXTU
 ; Unown puzzle
@@ -875,13 +875,19 @@ wBillsPC_MonHasMail:: db
 wBillsPCDataEnd::
 
 NEXTU
-; link data
-wLinkData::
+; raw link data
+wLinkData:: ds 1300
+wLinkDataEnd::
+
+NEXTU
+; link data members
 wLinkPlayerName:: ds NAME_LENGTH
 wLinkPartyCount:: db
 wLinkPartySpecies:: ds PARTY_LENGTH
 wLinkPartyEnd:: db ; older code doesn't check PartyCount
 
+UNION
+; link player data
 wLinkPlayerData::
 wLinkPlayerPartyMon1:: party_struct wLinkPlayerPartyMon1
 wLinkPlayerPartyMon2:: party_struct wLinkPlayerPartyMon2
@@ -892,24 +898,35 @@ wLinkPlayerPartyMon6:: party_struct wLinkPlayerPartyMon6
 wLinkPlayerPartyMonOTNames:: ds PARTY_LENGTH * NAME_LENGTH
 wLinkPlayerPartyMonNicks:: ds PARTY_LENGTH * MON_NAME_LENGTH
 wLinkPlayerDataEnd::
-	ds 861
-wLinkDataEnd::
 
 NEXTU
-; more link data
-; TODO: replace with meaningful labels
-	ds 271
-wc90f:: ds 229
-wc9f4:: ds 5
-wc9f9:: ds 145
-	ds 53
-wcabf:: ds 79
-wcb0e:: ds 5
-wcb13:: ds 113
-wcb84:: ds 102
-	ds 96
-wcc4a:: ds 84
-wcc9e:: ds 130
+; link patch lists
+wLinkPatchList1:: ds SERIAL_PATCH_LIST_LENGTH
+wLinkPatchList2:: ds SERIAL_PATCH_LIST_LENGTH
+ENDU
+
+NEXTU
+; link mail data
+	ds 500
+wLinkPlayerMail::
+wLinkPlayerMailPreamble:: ds SERIAL_MAIL_PREAMBLE_LENGTH
+wLinkPlayerMailMessages:: ds (MAIL_MSG_LENGTH + 1) * PARTY_LENGTH
+wLinkPlayerMailMetadata:: ds (MAIL_STRUCT_LENGTH - (MAIL_MSG_LENGTH + 1)) * PARTY_LENGTH
+wLinkPlayerMailPatchSet:: ds 103
+wLinkPlayerMailEnd::
+	ds 10
+wLinkOTMail::
+wLinkOTMailMessages:: ds (MAIL_MSG_LENGTH + 1) * PARTY_LENGTH
+wLinkOTMailMetadata:: ds (MAIL_STRUCT_LENGTH - (MAIL_MSG_LENGTH + 1)) * PARTY_LENGTH
+wOTPlayerMailPatchSet:: ds 103 + SERIAL_MAIL_PREAMBLE_LENGTH
+wLinkOTMailEnd::
+	ds 10
+
+NEXTU
+; received link mail data
+	ds 500
+wLinkReceivedMail:: ds MAIL_STRUCT_LENGTH * PARTY_LENGTH
+wLinkReceivedMailEnd:: db
 
 ENDU
 
@@ -939,23 +956,32 @@ ENDU
 
 wTileAnimBuffer:: ds 1 tiles
 
-; addresses dealing with serial comms
+; link data
+UNION
 wOtherPlayerLinkMode:: db
 wOtherPlayerLinkAction:: db
 	ds 3
 wPlayerLinkAction:: db
-wcf57:: db ; TODO: replace with meaningful label
-	ds 3
+	ds 4
+NEXTU
+wLinkReceivedSyncBuffer:: ds 5
+wLinkPlayerSyncBuffer:: ds 5
+ENDU
+
 wLinkTimeoutFrames:: dw
-wcf5d:: dw ; TODO: replace with meaningful label
+wLinkByteTimeout:: dw
 
 wJumptableIndex:: db ; must come right before the union
 
 UNION
 ; intro and title data
 wIntroSceneFrameCounter:: db
-wTitleScreenTimerLo:: db
-wTitleScreenTimerHi:: db
+wIntroSceneTimer:: db
+
+NEXTU
+; title data
+	ds 1
+wTitleScreenTimer:: dw
 
 NEXTU
 ; credits data
@@ -964,30 +990,72 @@ wCreditsBorderMon:: db
 wCreditsLYOverride:: db
 
 NEXTU
+; pokedex
+wPrevDexEntryJumptableIndex:: db
+wPrevDexEntryBackup:: db
+
+NEXTU
+; pokegear
+wPokegearCard:: db
+wPokegearMapRegion:: db
+
+NEXTU
+; pack
+wPackJumptableIndex:: db
+wCurPocket:: db
+wPackUsedItem:: db
+
+NEXTU
+; trainer card badges
+wTrainerCardBadgeFrameCounter:: db
+wTrainerCardBadgeTileID:: db
+
+NEXTU
+; slot machine
+wSlotsDelay:: db
+
+NEXTU
+; card flip
+wCardFlipCursorY:: db
+wCardFlipCursorX:: db
+wCardFlipWhichCard:: db
+
+;NEXTU
+;; unused memory game
+;wMemoryGameCardChoice:: db
+
+NEXTU
+; magnet train
+wMagnetTrainOffset:: db
+wMagnetTrainPosition:: db
+wMagnetTrainWaitCounter:: db
+
+NEXTU
 ; unown puzzle data
 wHoldingUnownPuzzlePiece:: db
 wUnownPuzzleCursorPosition:: db
 wUnownPuzzleHeldPiece:: db
 
 NEXTU
-; card flip data
-wCardFlipCursorY:: db
-wCardFlipCursorX:: db
-wCardFlipWhichCard:: db
+; battle transitions
+wBattleTransitionCounter:: db
+wBattleTransitionSineWaveOffset::
+wBattleTransitionSpinQuadrant:: db
+
+NEXTU
+; stats screen
+wStatsScreenFlags:: db
 
 NEXTU
 ; miscellaneous
-wDexEntryPrevJumptableIndex::
+wFrameCounter::
 wMomBankDigitCursorPosition::
-wNrOfBeatenBattleTowerTrainers::
+wNamingScreenLetterCase::
+wHallOfFameMonCounter::
+wTradeDialog::
 	db
-wCurPocket:: db
-
-NEXTU
-; unidentified
-wcf64:: db ; TODO: replace with meaningful labels
-wcf65:: db ; TODO: replace with meaningful labels
-wcf66:: db ; TODO: replace with meaningful labels
+wFrameCounter2:: db
+wUnusedTradeAnimPlayEvolutionMusic:: db
 
 ENDU
 

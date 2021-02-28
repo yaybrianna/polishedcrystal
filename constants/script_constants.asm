@@ -2,6 +2,13 @@
 PLAYER      EQU  0
 LAST_TALKED EQU -2
 
+; string buffer constants
+	const_def
+	const STRING_BUFFER_3 ; use wStringBuffer3
+	const STRING_BUFFER_4 ; use wStringBuffer4
+	const STRING_BUFFER_5 ; use wStringBuffer5
+NUM_STRING_BUFFERS EQU const_value
+
 ; readvar/writevar/loadvar arguments
 ; _GetVarAction.VarActionTable indexes (see engine/overworld/variables.asm)
 	const_def
@@ -26,15 +33,14 @@ LAST_TALKED EQU -2
 	const VAR_XCOORD           ; 12
 	const VAR_YCOORD           ; 13
 	const VAR_SPECIALPHONECALL ; 14
-	const VAR_BT_WIN_STREAK    ; 15
-	const VAR_KURT_APRICORNS   ; 16
-	const VAR_CALLERID         ; 17
-	const VAR_BLUECARDBALANCE  ; 18
-	const VAR_BUENASPASSWORD   ; 19
-	const VAR_KENJI_BREAK      ; 1a
-	const VAR_PKMN_JOURNALS    ; 1b
-	const VAR_TRAINER_STARS    ; 1c
-NUM_VARS EQU const_value   ; 1d
+	const VAR_KURT_APRICORNS   ; 15
+	const VAR_CALLERID         ; 16
+	const VAR_BLUECARDBALANCE  ; 17
+	const VAR_BUENASPASSWORD   ; 18
+	const VAR_KENJI_BREAK      ; 19
+	const VAR_PKMN_JOURNALS    ; 1a
+	const VAR_TRAINER_STARS    ; 1b
+NUM_VARS EQU const_value   ; 1c
 
 ; variable action types
 RETVAR_STRBUF2 EQU (0 << 6)
@@ -99,21 +105,12 @@ BGEVENT_ITEM EQU const_value
 ; see engine/events.asm:TryObjectEvent.pointers
 	const_def
 	const OBJECTTYPE_SCRIPT         ; 0
-	const OBJECTTYPE_POKEBALL       ; 1
+	const OBJECTTYPE_ITEMBALL       ; 1
 	const OBJECTTYPE_TRAINER        ; 2
 	const OBJECTTYPE_GENERICTRAINER ; 3
 	const OBJECTTYPE_POKEMON        ; 4
 	const OBJECTTYPE_COMMAND        ; 5
 NUM_OBJECTTYPES EQU const_value
-
-; command queue members
-CMDQUEUE_TYPE EQU 0
-CMDQUEUE_ADDR EQU 1 ; offsets 0, 3, 4, and 5 are unused
-CMDQUEUE_ENTRY_SIZE EQU 6
-CMDQUEUE_CAPACITY EQU 4
-
-CMDQUEUE_STONETABLE EQU 2 ; types 0, 1, 3, and 4 are unused
-NUM_CMDQUEUE_TYPES EQU 5
 
 ; elevfloor macro values
 ; ElevatorFloorNames indexes (see data/events/elevator_floors.asm)

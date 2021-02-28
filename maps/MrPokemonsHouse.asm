@@ -41,11 +41,7 @@ MrPokemonsHouseTrigger0:
 	writetext MrPokemonIntroText2
 	buttonsound
 	waitsfx
-	givekeyitem MYSTERY_EGG
-	writetext MrPokemonsHouse_GotEggText
-	playsound SFX_KEY_ITEM
-	waitsfx
-	keyitemnotify
+	verbosegivekeyitem MYSTERY_EGG
 	setevent EVENT_GOT_MYSTERY_EGG_FROM_MR_POKEMON
 	blackoutmod CHERRYGROVE_CITY
 if !DEF(DEBUG)
@@ -127,8 +123,8 @@ MrPokemonsHouse_OakScript:
 	special RestartMapMusic
 	showtext MrPokemonText_ImDependingOnYou
 	setevent EVENT_RIVAL_NEW_BARK_TOWN
-	setevent EVENT_KRISS_HOUSE_1F_NEIGHBOR
-	clearevent EVENT_KRISS_NEIGHBORS_HOUSE_NEIGHBOR
+	setevent EVENT_PLAYERS_HOUSE_1F_NEIGHBOR
+	clearevent EVENT_PLAYERS_NEIGHBORS_HOUSE_NEIGHBOR
 	setscene $1
 	setmapscene CHERRYGROVE_CITY, $1
 	setmapscene ELMS_LAB, $3
@@ -197,11 +193,6 @@ MrPokemonIntroText2:
 	text "This is what I"
 	line "want Prof.Elm to"
 	cont "examine."
-	done
-
-MrPokemonsHouse_GotEggText:
-	text "<PLAYER> received"
-	line "Mystery Egg."
 	done
 
 MrPokemonIntroText3:

@@ -204,7 +204,7 @@ GetMonSprite:
 	ld a, [wBreedMon1Shiny]
 	ld d, a
 	ld a, [wBreedMon1Form]
-	and FORM_MASK
+	and BASEMON_MASK
 	ld e, a
 	ld a, [wBreedMon1Species]
 	jr .Mon
@@ -213,7 +213,7 @@ GetMonSprite:
 	ld a, [wBreedMon2Shiny]
 	ld d, a
 	ld a, [wBreedMon2Form]
-	and FORM_MASK
+	and BASEMON_MASK
 	ld e, a
 	ld a, [wBreedMon2Species]
 	jr .Mon
@@ -248,7 +248,7 @@ GetMonSprite:
 	scf
 	ret
 
-_DoesSpriteHaveFacings::
+DoesSpriteHaveFacings::
 ; Checks to see whether we can apply a facing to a sprite.
 ; Returns zero for Pokémon sprites, carry for the rest.
 	cp SPRITE_POKEMON
@@ -277,10 +277,10 @@ _GetSpritePalette::
 
 .is_pokemon
 	ld a, [wMapGroup]
-	cp GROUP_KRISS_HOUSE_2F
+	cp GROUP_PLAYERS_HOUSE_2F
 	jr nz, .not_doll
 	ld a, [wMapNumber]
-	cp MAP_KRISS_HOUSE_2F
+	cp MAP_PLAYERS_HOUSE_2F
 	jr nz, .not_doll
 	farjp GetOverworldMonIconPalette
 
@@ -293,7 +293,7 @@ _GetSpritePalette::
 	farcall GetOverworldMonIconPalette
 
 	; gray, pink, and teal exist in the party menu and the player's room,
-	; but not on Route 34 for the Daycare
+	; but not on Route 34 for the DayCare
 	cp PAL_OW_GRAY
 	jr z, .use_rock
 	cp PAL_OW_TEAL
@@ -347,7 +347,7 @@ endr
 	ret nz
 
 	ldh a, [hUsedSpriteIndex]
-	call _DoesSpriteHaveFacings
+	call DoesSpriteHaveFacings
 	ret c
 
 	ld a, [wSpriteFlags]

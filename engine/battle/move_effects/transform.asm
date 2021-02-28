@@ -154,7 +154,7 @@ BattleCommand_transform:
 	ld a, SUBSTITUTE
 	call nz, LoadAnim
 	ld hl, TransformedText
-	call StdBattleTextBox
+	call StdBattleTextbox
 	pop de
 	farcall SetDisableEncoreMoves
 
@@ -181,4 +181,5 @@ BattleCommand_transform:
 	ld [hl], a
 	cp IMPOSTER
 	ret z ; avoid infinite loop
+
 	farjp RunActivationAbilitiesInner

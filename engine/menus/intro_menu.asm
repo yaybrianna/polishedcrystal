@@ -56,6 +56,7 @@ NewGame:
 _NewGame_FinishSetup:
 	call ResetWRAM
 	call NewGame_ClearTileMapEtc
+	call CheckVBA
 	call SetInitialOptions
 	call ProfElmSpeech
 	call InitializeWorld
@@ -346,10 +347,10 @@ Continue:
 	call DelayFrames
 	call ConfirmContinue
 	jp c, CloseWindow
+	call CheckVBA
 	call Continue_CheckRTC_RestartClock
 	jp c, CloseWindow
 	call Continue_CheckEGO_ResetInitialOptions
-;	jp c, CloseWindow
 	ld a, $8
 	ld [wMusicFade], a
 	xor a ; MUSIC_NONE
@@ -361,7 +362,7 @@ Continue:
 	ld c, 20
 	call DelayFrames
 	farcall JumpRoamMons
-	farcall Function140ae ; time-related
+	farcall ClockContinue ; time-related
 	ld a, [wSpawnAfterChampion]
 	cp SPAWN_LANCE
 	jr z, .SpawnAfterE4
@@ -398,27 +399,37 @@ ConfirmContinue:
 	scf
 	ret
 
+CheckVBA:
+	xor a
+	ldh [rSC], a ; no-optimize redundant loads (VBA loads this wrong)
+	ldh a, [rSC]
+	and %01111100
+	cp %01111100
+	ret z
+	ld hl, .WarnVBAText
+	jp PrintText
+
+.WarnVBAText:
+	text_jump _WarnVBAText
+	text_end
+
 Continue_CheckRTC_RestartClock:
 	call CheckRTCStatus
 	and %10000000 ; Day count exceeded 16383
-	jr z, .pass
+	jr z, Continue_FinishReset
 	farcall RestartClock
 	ld a, c
 	and a
-	jr z, .pass
+	jr z, Continue_FinishReset
 	scf
-	ret
-
-.pass
-	xor a
 	ret
 
 Continue_CheckEGO_ResetInitialOptions:
 	ld a, [wInitialOptions2]
 	bit RESET_INIT_OPTS, a
-	jr z, .pass
-	farcall SetInitialOptions
-.pass
+	call nz, SetInitialOptions
+	; fallthrough
+Continue_FinishReset:
 	xor a
 	ret
 
@@ -735,7 +746,7 @@ InitGender:
 	call PrintText
 
 	ld hl, .MenuDataHeader
-	call LoadMenuDataHeader
+	call LoadMenuHeader
 	call ApplyAttrAndTilemapInVBlank
 	call VerticalMenu
 	call CloseWindow
@@ -820,43 +831,35 @@ NamePlayer:
 INCLUDE "data/default_player_names.asm"
 
 ShrinkPlayer:
-
-	ldh a, [hROMBank]
-	push af
-
 	ld a, 0 << 7 | 32 ; fade out
 	ld [wMusicFade], a
-	ld de, MUSIC_NONE
-	ld a, e
+	xor a ; MUSIC_NONE
 	ld [wMusicFadeIDLo], a
-	ld a, d
 	ld [wMusicFadeIDHi], a
 
 	ld de, SFX_ESCAPE_ROPE
 	call PlaySFX
-	pop af
-	rst Bankswitch
 
-	ld c, 8
+	ld c, 16
 	call DelayFrames
 
 	ld hl, Shrink1Pic
 	call ShrinkFrame
 
-	ld c, 8
+	ld c, 16
 	call DelayFrames
 
 	ld hl, Shrink2Pic
 	call ShrinkFrame
 
-	ld c, 8
+	ld c, 16
 	call DelayFrames
 
 	hlcoord 6, 4
 	lb bc, 7, 7
 	call ClearBox
 
-	ld c, 3
+	ld c, 6
 	call DelayFrames
 
 	call Intro_PlacePlayerSprite
@@ -895,11 +898,10 @@ DrawIntroPlayerPic:
 	ld [wCurPartySpecies], a
 	ld a, [wPlayerGender]
 	bit 0, a
-	jr z, .male
 	ld a, CARRIE
-	jr .ok
-.male
-	ld a, CAL
+	jr nz, .ok
+	assert CARRIE + 1 == CAL
+	inc a
 .ok
 	ld [wTrainerClass], a
 Intro_PrepTrainerPic:
@@ -962,7 +964,7 @@ Intro_PlacePlayerSprite:
 	db 10 * 8 + 4, 10 * 8, 3
 
 CrystalIntroSequence:
-	farcall Copyright_GFPresents
+	farcall SplashScreen
 	jr c, StartTitleScreen
 	farcall CrystalIntro
 
@@ -1129,16 +1131,15 @@ TitleScreenTimer:
 	jr z, .ok
 	ld de, 56 * 60
 .ok
-	ld hl, wcf65
+	ld hl, wTitleScreenTimer
 	ld [hl], e
 	inc hl
 	ld [hl], d
 	ret
 
 TitleScreenMain:
-
 ; Run the timer down.
-	ld hl, wcf65
+	ld hl, wTitleScreenTimer
 	ld e, [hl]
 	inc hl
 	ld d, [hl]
@@ -1198,7 +1199,7 @@ TitleScreenMain:
 	ld hl, wMusicFade
 	ld [hl], 8 ; 1 second
 
-	ld hl, wcf65
+	ld hl, wTitleScreenTimer
 	inc [hl]
 	ret
 
@@ -1222,7 +1223,7 @@ TitleScreenEnd:
 
 ; Wait until the music is done fading.
 
-	ld hl, wcf65
+	ld hl, wTitleScreenTimer
 	inc [hl]
 
 	ld a, [wMusicFade]

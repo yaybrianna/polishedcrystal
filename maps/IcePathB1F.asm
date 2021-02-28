@@ -2,7 +2,7 @@ IcePathB1F_MapScriptHeader:
 	def_scene_scripts
 
 	def_callbacks
-	callback MAPCALLBACK_CMDQUEUE, IcePathB1FSetUpStoneTable
+	callback MAPCALLBACK_STONETABLE, IcePathB1FSetUpStoneTable
 
 	def_warp_events
 	warp_event  3, 15, ICE_PATH_1F, 3
@@ -20,10 +20,10 @@ IcePathB1F_MapScriptHeader:
 	bg_event 17, 30, BGEVENT_ITEM + MAX_POTION, EVENT_ICE_PATH_B1F_HIDDEN_MAX_POTION
 
 	def_object_events
-	strengthboulder_event 11,  7, EVENT_BOULDER_IN_ICE_PATH_1
-	strengthboulder_event  7,  8, EVENT_BOULDER_IN_ICE_PATH_2
-	strengthboulder_event  8,  9, EVENT_BOULDER_IN_ICE_PATH_3
-	strengthboulder_event 17,  7, EVENT_BOULDER_IN_ICE_PATH_4
+	object_event 11,  7, SPRITE_ICE_BOULDER, SPRITEMOVEDATA_STRENGTH_BOULDER, 0, 0, -1, -1, 0, OBJECTTYPE_COMMAND, jumpstd, strengthboulder, EVENT_BOULDER_IN_ICE_PATH_1
+	object_event  7,  8, SPRITE_ICE_BOULDER, SPRITEMOVEDATA_STRENGTH_BOULDER, 0, 0, -1, -1, 0, OBJECTTYPE_COMMAND, jumpstd, strengthboulder, EVENT_BOULDER_IN_ICE_PATH_2
+	object_event  8,  9, SPRITE_ICE_BOULDER, SPRITEMOVEDATA_STRENGTH_BOULDER, 0, 0, -1, -1, 0, OBJECTTYPE_COMMAND, jumpstd, strengthboulder, EVENT_BOULDER_IN_ICE_PATH_3
+	object_event 17,  7, SPRITE_ICE_BOULDER, SPRITEMOVEDATA_STRENGTH_BOULDER, 0, 0, -1, -1, 0, OBJECTTYPE_COMMAND, jumpstd, strengthboulder, EVENT_BOULDER_IN_ICE_PATH_4
 	object_event  2,  1, SPRITE_SKIER, SPRITEMOVEDATA_STANDING_DOWN, 0, 0, -1, -1, 0, OBJECTTYPE_SCRIPT, 0, IcePathB1FSkierScript, -1
 	object_event  4, 23, SPRITE_BOARDER, SPRITEMOVEDATA_STANDING_DOWN, 0, 0, -1, -1, 0, OBJECTTYPE_GENERICTRAINER, 3, GenericTrainerBoarderMax, -1
 	object_event 14, 24, SPRITE_SKIER, SPRITEMOVEDATA_STANDING_DOWN, 0, 0, -1, -1, 0, OBJECTTYPE_GENERICTRAINER, 2, GenericTrainerSkierBecky, -1
@@ -36,12 +36,8 @@ IcePathB1F_MapScriptHeader:
 	const ICEPATHB1F_BOULDER4
 
 IcePathB1FSetUpStoneTable:
-	writecmdqueue .CommandQueue
+	usestonetable .StoneTable
 	return
-
-.CommandQueue:
-	dbw CMDQUEUE_STONETABLE, .StoneTable ; check if any stones are sitting on a warp
-	dw 0 ; filler
 
 .StoneTable:
 	stonetable 3, ICEPATHB1F_BOULDER1, .Boulder1

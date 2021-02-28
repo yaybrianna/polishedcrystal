@@ -81,7 +81,7 @@ TryAddMonToParty:
 	; - sp+$6: party data for [wCurPartyMon], just past the level and species
 	; - sp+$4: return address for 'predef TryAddMonToParty'
 	; - sp+$2: af from _Predef (ReturnFarCall will pop this)
-	; - sp+$0: return address for 'call RetrieveHLAndCallFunction'
+	; - sp+$0: return address for 'call RetrieveAHLAndCallFunction'
 	ld hl, sp+$6
 	ld a, [hli]
 	ld h, [hl]
@@ -107,7 +107,7 @@ TryAddMonToParty:
 	inc hl
 	ld a, [wTrainerGroupBank]
 	call GetFarByte
-	and FORM_MASK
+	and BASEMON_MASK
 .got_trainer_form
 	ld [wCurForm], a
 .not_trainer_form
@@ -118,7 +118,7 @@ TryAddMonToParty:
 	ld a, wRoamMon1Form - wRoamMon1
 	farcall DoGetRoamMonData
 	ld a, [hl]
-	and FORM_MASK
+	and BASEMON_MASK
 	ld [wCurForm], a
 .not_roaming_form
 
@@ -397,7 +397,7 @@ endr
 	ld a, [wCurPartySpecies]
 	ld c, a
 	ld a, [wPartyMon1Form]
-	and FORM_MASK
+	and BASEMON_MASK
 	ld b, a
 	call GetGenderRatio
 	pop af
@@ -938,7 +938,7 @@ RestorePPofDepositedPokemon:
 	push bc
 	push hl
 	push de
-	farcall GetMaxPPOfMove
+	call GetMaxPPOfMove
 	pop de
 	pop hl
 	ld a, [wd265]
@@ -961,7 +961,7 @@ RestorePPofDepositedPokemon:
 	ld [wMenuCursorY], a
 	ret
 
-RetrievePokemonFromDaycareMan:
+RetrievePokemonFromDayCareMan:
 	ld a, [wBreedMon1Species]
 	ld [wCurPartySpecies], a
 	ld de, SFX_TRANSACTION
@@ -969,14 +969,14 @@ RetrievePokemonFromDaycareMan:
 	call WaitSFX
 	call GetBreedMon1LevelGrowth
 	ld a, b
-	ld [wd002], a
+	ld [wPrevPartyLevel], a
 	ld a, e
 	ld [wCurPartyLevel], a
 	xor a
 	ld [wPokemonWithdrawDepositParameter], a
 	jr RetrieveBreedmon
 
-RetrievePokemonFromDaycareLady:
+RetrievePokemonFromDayCareLady:
 	ld a, [wBreedMon2Species]
 	ld [wCurPartySpecies], a
 	ld de, SFX_TRANSACTION
@@ -984,7 +984,7 @@ RetrievePokemonFromDaycareLady:
 	call WaitSFX
 	call GetBreedMon2LevelGrowth
 	ld a, b
-	ld [wd002], a
+	ld [wPrevPartyLevel], a
 	ld a, e
 	ld [wCurPartyLevel], a
 	ld a, PC_DEPOSIT
@@ -1033,7 +1033,7 @@ RetrieveBreedmon:
 	pop hl
 	rst CopyBytes
 	push hl
-	call Functionde1a
+	call GetLastPartyMon
 	ld hl, MON_FORM
 	add hl, de
 	ld a, [hl]
@@ -1042,7 +1042,7 @@ RetrieveBreedmon:
 	ld bc, BOXMON_STRUCT_LENGTH
 	rst CopyBytes
 	call GetBaseData
-	call Functionde1a
+	call GetLastPartyMon
 	ld b, d
 	ld c, e
 	ld hl, MON_LEVEL
@@ -1080,7 +1080,7 @@ RetrieveBreedmon:
 	ld a, [wPartyCount]
 	dec a
 	ld [wCurPartyMon], a
-	farcall HealPartyMonEvenForNuzlocke
+	call HealPartyMonEvenForNuzlocke
 	ld a, [wCurPartyLevel]
 	ld d, a
 	farcall CalcExpAtLevel
@@ -1096,7 +1096,7 @@ RetrieveBreedmon:
 	and a
 	ret
 
-Functionde1a:
+GetLastPartyMon:
 	ld a, [wPartyCount]
 	dec a
 	ld hl, wPartyMon1Species
@@ -1106,11 +1106,11 @@ Functionde1a:
 	ld e, l
 	ret
 
-DepositMonWithDaycareMan:
+DepositMonWithDayCareMan:
 	ld de, wBreedMon1Nick
 	jr _DepositBreedmon
 
-DepositMonWithDaycareLady:
+DepositMonWithDayCareLady:
 	ld de, wBreedMon2Nick
 
 _DepositBreedmon:
@@ -1538,7 +1538,7 @@ ComputeNPCTrademonStats:
 	ld a, MON_FORM
 	call GetPartyParamLocation
 	ld a, [hl]
-	and FORM_MASK
+	and BASEMON_MASK
 	ld [wCurForm], a
 	call GetBaseData
 	ld a, MON_MAXHP
@@ -1569,7 +1569,7 @@ UpdatePkmnStats:
 	ld a, MON_FORM
 	call GetPartyParamLocation
 	ld a, [hl]
-	and FORM_MASK
+	and BASEMON_MASK
 	ld [wCurForm], a
 	call GetBaseData
 	ld a, MON_LEVEL
@@ -1652,7 +1652,7 @@ CalcPkmnStats:
 ; Calculates all 6 Stats of a Pkmn
 ; b: Hyper Training (bit 7-2), apply EVs (bit 0)
 ; 'c' counts from 1-6 and points with 'wBaseStats' to the base value
-; hl is the path to the EVs
+; hl is the path to the EVs - 1
 ; de is a pointer where the 6 stats are placed
 
 	ld c, $0
@@ -1714,8 +1714,10 @@ CalcPkmnStatC:
 	dec c
 	jr nz, .hyper_training_loop
 	pop bc
+	jr nc, .not_hyper_trained
+	ld b, b ;  no-optimize nops (BGB breakpoint; should never run yet)
 	ld a, $f
-	jr c, .GotDV
+	jr .GotDV
 
 .not_hyper_trained
 	ld a, c
@@ -2102,8 +2104,7 @@ GivePoke::
 .set_caught_data
 	farcall GiveANickname_YesNo
 	pop de
-	jr c, .skip_nickname
-	call InitNickname
+	call nc, InitNickname
 
 .skip_nickname
 	pop bc

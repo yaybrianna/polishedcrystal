@@ -6,7 +6,7 @@ MonSubmenu:
 	call GetMonSubmenuItems
 	farcall FreezeMonIcons
 	ld hl, .MenuDataHeader
-	call LoadMenuDataHeader
+	call LoadMenuHeader
 	call .GetTopCoord
 	call PopulateMonMenu
 
@@ -132,9 +132,7 @@ GetMonSubmenuItems:
 	push hl
 	call IsFieldMove
 	pop hl
-	jr nc, .next
-	call AddMonMenuItem
-
+	call c, AddMonMenuItem
 .next
 	pop de
 	inc de

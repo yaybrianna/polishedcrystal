@@ -4,7 +4,7 @@ DoPlayerMovement::
 	ld a, movement_step_sleep_1
 	ld [wMovementAnimation], a
 	xor a
-	ld [wEngineBuffer4], a
+	ld [wWalkingIntoEdgeWarp], a
 	call .TranslateIntoMovement
 	ld c, a
 	ld a, [wMovementAnimation]
@@ -85,11 +85,11 @@ DoPlayerMovement::
 	ret c
 	call .CheckWarp
 	ret c
+
+; Walking into a wall will bump.
 	ld a, [wWalkingDirection]
 	cp STANDING
-	jr z, .HitWall
-	call .BumpSound
-.HitWall:
+	call nz, .BumpSound
 	call .StandInPlace
 	xor a
 	ret
@@ -100,11 +100,9 @@ DoPlayerMovement::
 	jr z, .Standing
 
 ; Walking into an edge warp won't bump.
-	ld a, [wEngineBuffer4]
+	ld a, [wWalkingIntoEdgeWarp]
 	and a
-	jr nz, .CantMove
-	call .BumpSound
-.CantMove:
+	call z, .BumpSound
 	call ._WalkInPlace
 	xor a
 	ret
@@ -351,7 +349,7 @@ DoPlayerMovement::
 	and 7
 	ld e, a
 	ld d, 0
-	ld hl, .data_8021e
+	ld hl, .ledge_table
 	add hl, de
 	ld a, [wFacingDirection]
 	and [hl]
@@ -369,7 +367,7 @@ DoPlayerMovement::
 	xor a
 	ret
 
-.data_8021e
+.ledge_table:
 	db FACE_RIGHT
 	db FACE_LEFT
 	db FACE_UP
@@ -433,7 +431,7 @@ DoPlayerMovement::
 	jr nz, .not_warp
 
 	ld a, TRUE
-	ld [wEngineBuffer4], a
+	ld [wWalkingIntoEdgeWarp], a
 	ld a, [wPlayerDirection]
 	rrca
 	rrca

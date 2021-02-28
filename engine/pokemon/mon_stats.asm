@@ -94,7 +94,7 @@ PrintTempMonStats:
 rept 8
 	inc hl
 endr
-	farcall PrintNatureIndicators
+	call PrintNatureIndicators
 	pop hl
 	pop bc
 
@@ -236,7 +236,7 @@ PrintStatDifferences:
 	lb bc, 6, 12
 	add c
 	ld c, a
-	call TextBox
+	call Textbox
 	pop af
 	push af
 	hlcoord 7, 5
@@ -444,7 +444,7 @@ GetGender:
 	ld c, a
 	push bc ; b == gender|form
 	ld a, b
-	and FORM_MASK
+	and BASEMON_MASK
 	ld b, a
 	call GetGenderRatio ; c = gender ratio
 	pop af ; a = gender|form

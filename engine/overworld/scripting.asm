@@ -30,7 +30,7 @@ WaitScript:
 	dec [hl]
 	ret nz
 
-	farcall ReleaseAllMapObjects
+	farcall UnfreezeAllObjects
 
 	ld a, SCRIPT_READ
 	ld [wScriptMode], a
@@ -43,7 +43,7 @@ WaitScriptMovement:
 	bit 7, [hl]
 	ret nz
 
-	farcall ReleaseAllMapObjects
+	farcall UnfreezeAllObjects
 
 	ld a, SCRIPT_READ
 	ld [wScriptMode], a
@@ -175,94 +175,92 @@ ScriptCommandTable:
 	dw Script_changeblock                ; 76
 	dw Script_reloadmap                  ; 77
 	dw Script_reloadmappart              ; 78
-	dw Script_writecmdqueue              ; 79
-	dw Script_delcmdqueue                ; 7a
-	dw Script_playmusic                  ; 7b
-	dw Script_encountermusic             ; 7c
-	dw Script_musicfadeout               ; 7d
-	dw Script_playmapmusic               ; 7e
-	dw Script_dontrestartmapmusic        ; 7f
-	dw Script_cry                        ; 80
-	dw Script_playsound                  ; 81
-	dw Script_waitsfx                    ; 82
-	dw Script_warpsound                  ; 83
-	dw Script_specialsound               ; 84
-	dw Script_passtoengine               ; 85
-	dw Script_newloadmap                 ; 86
-	dw Script_pause                      ; 87
-	dw Script_deactivatefacing           ; 88
-	dw Script_priorityjump               ; 89
-	dw Script_warpcheck                  ; 8a
-	dw Script_ptpriorityjump             ; 8b
-	dw Script_return                     ; 8c
-	dw Script_end                        ; 8d
-	dw Script_reloadandreturn            ; 8e
-	dw Script_endall                     ; 8f
-	dw Script_pokemart                   ; 90
-	dw Script_elevator                   ; 91
-	dw Script_trade                      ; 92
-	dw Script_askforphonenumber          ; 93
-	dw Script_phonecall                  ; 94
-	dw Script_hangup                     ; 95
-	dw Script_describedecoration         ; 96
-	dw Script_fruittree                  ; 97
-	dw Script_specialphonecall           ; 98
-	dw Script_checkphonecall             ; 99
-	dw Script_verbosegiveitem            ; 9a
-	dw Script_verbosegiveitem2           ; 9b
-	dw Script_swarm                      ; 9c
-	dw Script_halloffame                 ; 9d
-	dw Script_credits                    ; 9e
-	dw Script_warpfacing                 ; 9f
-	dw Script_battletowertext            ; a0
-	dw Script_landmarktotext             ; a1
-	dw Script_trainerclassname           ; a2
-	dw Script_name                       ; a3
-	dw Script_wait                       ; a4
-	dw Script_check_save                 ; a5
-	dw Script_count_seen_caught          ; a6
-	dw Script_trainerpic                 ; a7
-	dw Script_givetmhm                   ; a8
-	dw Script_checktmhm                  ; a9
-	dw Script_verbosegivetmhm            ; aa
-	dw Script_tmhmnotify                 ; ab
-	dw Script_tmhmtotext                 ; ac
-	dw Script_checkdarkness              ; ad
-	dw Script_checkunits                 ; ae
-	dw Script_unowntypeface              ; af
-	dw Script_restoretypeface            ; b0
-	dw Script_jumpstashedtext            ; b1
-	dw Script_jumpopenedtext             ; b2
-	dw Script_iftrue_jumptext            ; b3
-	dw Script_iffalse_jumptext           ; b4
-	dw Script_iftrue_jumptextfaceplayer  ; b5
-	dw Script_iffalse_jumptextfaceplayer ; b6
-	dw Script_iftrue_jumpopenedtext      ; b7
-	dw Script_iffalse_jumpopenedtext     ; b8
-	dw Script_writethistext              ; b9
-	dw Script_jumpthistext               ; ba
-	dw Script_jumpthistextfaceplayer     ; bb
-	dw Script_jumpthisopenedtext         ; bc
-	dw Script_showtext                   ; bd
-	dw Script_showtextfaceplayer         ; be
-	dw Script_applyonemovement           ; bf
-	dw Script_showcrytext                ; c0
-	dw Script_endtext                    ; c1
-	dw Script_waitendtext                ; c2
-	dw Script_iftrue_endtext             ; c3
-	dw Script_iffalse_endtext            ; c4
-	dw Script_loadgrottomon              ; c5
-	dw Script_giveapricorn               ; c6
-	dw Script_paintingpic                ; c7
-	dw Script_checkegg                   ; c8
-	dw Script_givekeyitem                ; c9
-	dw Script_checkkeyitem               ; ca
-	dw Script_takekeyitem                ; cb
-	dw Script_verbosegivekeyitem         ; cc
-	dw Script_keyitemnotify              ; cd
-	dw Script_givebp                     ; ce
-	dw Script_takebp                     ; cf
-	dw Script_checkbp                    ; d0
+	dw Script_usestonetable              ; 79
+	dw Script_playmusic                  ; 7a
+	dw Script_encountermusic             ; 7b
+	dw Script_musicfadeout               ; 7c
+	dw Script_playmapmusic               ; 7d
+	dw Script_dontrestartmapmusic        ; 7e
+	dw Script_cry                        ; 7f
+	dw Script_playsound                  ; 80
+	dw Script_waitsfx                    ; 81
+	dw Script_warpsound                  ; 82
+	dw Script_specialsound               ; 83
+	dw Script_passtoengine               ; 84
+	dw Script_newloadmap                 ; 85
+	dw Script_pause                      ; 86
+	dw Script_deactivatefacing           ; 87
+	dw Script_priorityjump               ; 88
+	dw Script_warpcheck                  ; 89
+	dw Script_ptpriorityjump             ; 8a
+	dw Script_return                     ; 8b
+	dw Script_end                        ; 8c
+	dw Script_reloadandreturn            ; 8d
+	dw Script_endall                     ; 8e
+	dw Script_pokemart                   ; 8f
+	dw Script_elevator                   ; 90
+	dw Script_trade                      ; 91
+	dw Script_askforphonenumber          ; 92
+	dw Script_hangup                     ; 93
+	dw Script_describedecoration         ; 94
+	dw Script_fruittree                  ; 95
+	dw Script_specialphonecall           ; 96
+	dw Script_checkphonecall             ; 97
+	dw Script_verbosegiveitem            ; 98
+	dw Script_verbosegiveitem2           ; 99
+	dw Script_swarm                      ; 9a
+	dw Script_halloffame                 ; 9b
+	dw Script_credits                    ; 9c
+	dw Script_warpfacing                 ; 9d
+	dw Script_battletowertext            ; 9e
+	dw Script_landmarktotext             ; 9f
+	dw Script_trainerclassname           ; a0
+	dw Script_name                       ; a1
+	dw Script_wait                       ; a2
+	dw Script_check_save                 ; a3
+	dw Script_count_seen_caught          ; a4
+	dw Script_trainerpic                 ; a5
+	dw Script_givetmhm                   ; a6
+	dw Script_checktmhm                  ; a7
+	dw Script_verbosegivetmhm            ; a8
+	dw Script_tmhmnotify                 ; a9
+	dw Script_tmhmtotext                 ; aa
+	dw Script_checkdarkness              ; ab
+	dw Script_checkunits                 ; ac
+	dw Script_unowntypeface              ; ad
+	dw Script_restoretypeface            ; ae
+	dw Script_jumpstashedtext            ; af
+	dw Script_jumpopenedtext             ; b0
+	dw Script_iftrue_jumptext            ; b1
+	dw Script_iffalse_jumptext           ; b2
+	dw Script_iftrue_jumptextfaceplayer  ; b3
+	dw Script_iffalse_jumptextfaceplayer ; b4
+	dw Script_iftrue_jumpopenedtext      ; b5
+	dw Script_iffalse_jumpopenedtext     ; b6
+	dw Script_writethistext              ; b7
+	dw Script_jumpthistext               ; b8
+	dw Script_jumpthistextfaceplayer     ; b9
+	dw Script_jumpthisopenedtext         ; ba
+	dw Script_showtext                   ; bb
+	dw Script_showtextfaceplayer         ; bc
+	dw Script_applyonemovement           ; bd
+	dw Script_showcrytext                ; be
+	dw Script_endtext                    ; bf
+	dw Script_waitendtext                ; c0
+	dw Script_iftrue_endtext             ; c1
+	dw Script_iffalse_endtext            ; c2
+	dw Script_loadgrottomon              ; c3
+	dw Script_giveapricorn               ; c4
+	dw Script_paintingpic                ; c5
+	dw Script_checkegg                   ; c6
+	dw Script_givekeyitem                ; c7
+	dw Script_checkkeyitem               ; c8
+	dw Script_takekeyitem                ; c9
+	dw Script_verbosegivekeyitem         ; ca
+	dw Script_keyitemnotify              ; cb
+	dw Script_givebp                     ; cc
+	dw Script_takebp                     ; cd
+	dw Script_checkbp                    ; ce
 
 StartScript:
 	ld hl, wScriptFlags
@@ -535,7 +533,7 @@ Script_loadmenu:
 	call GetScriptByte
 	ld h, a
 	ld a, [wScriptBank]
-	ld de, LoadMenuDataHeader
+	ld de, LoadMenuHeader
 	call FarCall_de
 	jp UpdateSprites
 
@@ -586,7 +584,7 @@ Script_battletowertext:
 ; parameters:
 ;     pointer (PointerLabelBeforeBank)
 ;     memory (SingleByteParam)
-	call SetUpTextBox
+	call SetUpTextbox
 	call GetScriptByte
 	ld c, a
 	farjp BattleTowerText
@@ -605,7 +603,7 @@ Script_verbosegiveitem:
 	jp ScriptCall
 
 GiveItemScript:
-	farwritetext UnknownText_0x1c4719
+	farwritetext _ReceivedItemText
 	iffalse .Full
 	specialsound
 	waitbutton
@@ -648,15 +646,15 @@ Script_verbosegiveitem2:
 Script_itemnotify:
 	call GetPocketName
 	call CurItemName
-	ld b, BANK(UnknownText_0x1c472c)
-	ld hl, UnknownText_0x1c472c
+	ld b, BANK(_PutItemInPocketText)
+	ld hl, _PutItemInPocketText
 	jp MapTextbox
 
 Script_pocketisfull:
 	call GetPocketName
 	call CurItemName
-	ld b, BANK(UnknownText_0x1c474b)
-	ld hl, UnknownText_0x1c474b
+	ld b, BANK(_PocketIsFullText)
+	ld hl, _PocketIsFullText
 	jp MapTextbox
 
 Script_specialsound:
@@ -753,17 +751,6 @@ Script_trade:
 	farcall NPCTrade
 	jp Script_waitendtext
 
-Script_phonecall:
-; parameters:
-;     caller_name (RawTextPointerLabelParam)
-	call GetScriptByte
-	ld e, a
-	call GetScriptByte
-	ld d, a
-	ld a, [wScriptBank]
-	ld b, a
-	farjp PhoneCall
-
 Script_hangup:
 	farjp HangUp
 
@@ -835,7 +822,7 @@ Script_trainertext:
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-	ld a, [wEngineBuffer1]
+	ld a, [wSeenTrainerBank]
 	ld b, a
 	jp MapTextbox
 
@@ -844,7 +831,7 @@ Script_scripttalkafter:
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-	ld a, [wEngineBuffer1]
+	ld a, [wSeenTrainerBank]
 	ld b, a
 	jp ScriptJump
 
@@ -975,11 +962,11 @@ Script_applyonemovement:
 
 	push bc
 	ld a, c
-	farcall SetFlagsForMovement_1
+	farcall FreezeAllOtherObjects
 	pop bc
 
 	push bc
-	farcall SetFlagsForMovement_2
+	farcall _UnfreezeFollowerObject
 	pop bc
 
 	ld hl, wScriptPos
@@ -1015,11 +1002,11 @@ Script_applymovement2:
 ApplyMovement:
 	push bc
 	ld a, c
-	farcall SetFlagsForMovement_1
+	farcall FreezeAllOtherObjects
 	pop bc
 
 	push bc
-	farcall SetFlagsForMovement_2
+	farcall _UnfreezeFollowerObject
 	pop bc
 
 	call GetScriptByte
@@ -1103,7 +1090,7 @@ ApplyPersonFacing::
 	add hl, bc
 	ld a, [hl]
 	push bc
-	call DoesSpriteHaveFacings
+	farcall DoesSpriteHaveFacings
 	pop bc
 	jr c, .not_visible ; STANDING_SPRITE
 	ld hl, OBJECT_FLAGS1
@@ -1116,16 +1103,6 @@ ApplyPersonFacing::
 	ld hl, wVramState
 	bit 6, [hl]
 	jr nz, .text_state
-	call .DisableTextTiles
-.text_state
-	jp UpdateSprites
-
-.not_visible
-	pop de
-	scf
-	ret
-
-.DisableTextTiles:
 	call LoadMapPart
 	hlcoord 0, 0
 	ld bc, SCREEN_WIDTH * SCREEN_HEIGHT
@@ -1136,6 +1113,12 @@ ApplyPersonFacing::
 	ld a, b
 	or c
 	jr nz, .loop
+.text_state
+	jp UpdateSprites
+
+.not_visible
+	pop de
+	scf
 	ret
 
 Script_variablesprite:
@@ -1318,7 +1301,6 @@ EarthquakeMovementEnd:
 Script_randomwildmon:
 	xor a
 	ld [wBattleScriptFlags], a
-	ld [wWildMonForm], a
 	ret
 
 Script_loadmemtrainer:
@@ -1410,7 +1392,7 @@ Script_reloadmapafterbattle:
 	jr z, .done
 	ld b, BANK(Script_SpecialBillCall)
 	ld de, Script_SpecialBillCall
-	farcall LoadScriptBDE
+	call LoadScriptBDE
 .done
 ; fallthrough
 
@@ -2000,7 +1982,7 @@ Script_givepokeitem:
 	push bc
 	inc hl
 	ld bc, MAIL_MSG_LENGTH
-	ld de, wd002
+	ld de, wMonMailMessageBuffer
 	ld a, [wScriptBank]
 	call FarCopyBytes
 	pop bc
@@ -2503,28 +2485,13 @@ Script_dontrestartmapmusic:
 	ld [wDontPlayMapMusicOnReload], a
 	ret
 
-Script_writecmdqueue:
+Script_usestonetable:
 ; parameters:
-;     queue_pointer (MultiByteParam)
+;     stonetable_pointer (MultiByteParam)
 	call GetScriptByte
-	ld e, a
+	ld [wStoneTableAddress], a
 	call GetScriptByte
-	ld d, a
-	ld a, [wScriptBank]
-	ld b, a
-	jp WriteCmdQueue
-
-Script_delcmdqueue:
-; parameters:
-;     byte (SingleByteParam)
-	xor a
-	ldh [hScriptVar], a
-	call GetScriptByte
-	ld b, a
-	call DelCmdQueue
-	ret c
-	ld a, 1
-	ldh [hScriptVar], a
+	ld [wStoneTableAddress+1], a
 	ret
 
 Script_changemap:
@@ -2566,7 +2533,7 @@ Script_reloadmappart::
 Script_warpcheck:
 	call WarpCheck
 	ret nc
-	farjp EnableEvents
+	jp EnableEvents
 
 Script_newloadmap:
 ; parameters:
@@ -2742,11 +2709,11 @@ Script_count_seen_caught:
 	ld hl, wPokedexSeen
 	ld b, wEndPokedexSeen - wPokedexSeen
 	call CountSetBits
-	ld [wd002], a
+	ld [wTempPokedexSeenCount], a
 	ld hl, wPokedexCaught
 	ld b, wEndPokedexCaught - wPokedexCaught
 	call CountSetBits
-	ld [wd003], a
+	ld [wTempPokedexCaughtCount], a
 	ret
 
 Script_trainerpic:
@@ -2796,7 +2763,7 @@ Script_verbosegivetmhm:
 	jp ScriptCall
 
 GiveTMHMScript:
-	farwritetext UnknownText_0x1c4719
+	farwritetext _ReceivedItemText
 	playsound SFX_GET_TM
 	waitsfx
 	waitbutton
@@ -2806,8 +2773,8 @@ GiveTMHMScript:
 Script_tmhmnotify:
 	call GetTMHMPocketName
 	call CurTMHMName
-	ld b, BANK(UnknownText_0x1c472c)
-	ld hl, UnknownText_0x1c472c
+	ld b, BANK(_PutItemInPocketText)
+	ld hl, _PutItemInPocketText
 	jp MapTextbox
 
 Script_tmhmtotext:
@@ -2994,14 +2961,15 @@ Script_verbosegivekeyitem:
 	jp ScriptCall
 
 GiveKeyItemScript:
-	farwritetext UnknownText_0x1c4719
-	specialsound
+	farwritetext _ReceivedItemText
+	playsound SFX_KEY_ITEM
+	waitbutton
 	keyitemnotify
 	end
 
 Script_keyitemnotify:
 	call GetKeyItemPocketName
 	call GetCurKeyItemName
-	ld b, BANK(UnknownText_0x1c472c)
-	ld hl, UnknownText_0x1c472c
+	ld b, BANK(_PutItemInPocketText)
+	ld hl, _PutItemInPocketText
 	jp MapTextbox

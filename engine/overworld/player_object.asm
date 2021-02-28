@@ -1,3 +1,5 @@
+INCLUDE "data/sprites/map_objects.asm"
+
 BlankScreen:
 	call DisableSpriteUpdates
 	xor a
@@ -405,7 +407,9 @@ CopyTempObjectToObjectStruct:
 	ld [hl], a
 
 	ld a, [wTempObjectCopyMovement]
-	call CopySpriteMovementData
+	push bc
+	call .CopySpriteMovementData
+	pop bc
 
 	ld a, [wTempObjectCopyPalette]
 	ld hl, OBJECT_PALETTE
@@ -431,7 +435,7 @@ CopyTempObjectToObjectStruct:
 
 	ld hl, OBJECT_STEP_TYPE
 	add hl, de
-	ld [hl], STEP_TYPE_00
+	ld [hl], STEP_TYPE_RESET
 
 	ld hl, OBJECT_FACING_STEP
 	add hl, de
@@ -503,6 +507,56 @@ CopyTempObjectToObjectStruct:
 	ld hl, wPlayerBGMapOffsetX
 	sub [hl]
 	ld hl, OBJECT_SPRITE_X
+	add hl, de
+	ld [hl], a
+	ret
+
+.CopySpriteMovementData:
+	ld hl, OBJECT_MOVEMENTTYPE
+	add hl, de
+	ld [hl], a
+
+	push de
+	ld e, a
+	ld d, 0
+	ld hl, SpriteMovementData + 1 ; init facing
+rept NUM_SPRITEMOVEDATA_FIELDS
+	add hl, de
+endr
+	ld b, h
+	ld c, l
+	pop de
+
+	ld a, [bc]
+	inc bc
+	rlca
+	rlca
+	and %00001100
+	ld hl, OBJECT_FACING
+	add hl, de
+	ld [hl], a
+
+	ld a, [bc]
+	inc bc
+	ld hl, OBJECT_ACTION
+	add hl, de
+	ld [hl], a
+
+	ld a, [bc]
+	inc bc
+	ld hl, OBJECT_FLAGS1
+	add hl, de
+	ld [hl], a
+
+	ld a, [bc]
+	inc bc
+	ld hl, OBJECT_FLAGS2
+	add hl, de
+	ld [hl], a
+
+	ld a, [bc]
+	inc bc
+	ld hl, OBJECT_PALETTE
 	add hl, de
 	ld [hl], a
 	ret
@@ -673,7 +727,7 @@ FollowNotExact::
 	ld [hl], SPRITEMOVEDATA_FOLLOWNOTEXACT
 	ld hl, OBJECT_STEP_TYPE
 	add hl, de
-	ld [hl], STEP_TYPE_00
+	ld [hl], STEP_TYPE_RESET
 	ret
 
 GetRelativeFacing::

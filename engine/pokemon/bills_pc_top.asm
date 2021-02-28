@@ -10,13 +10,13 @@ _BillsPC:
 	and a
 	ret nz
 	ld hl, .Text_GottaHavePokemon
-	call MenuTextBoxBackup
+	call MenuTextboxBackup
 	scf
 	ret
 
 .Text_GottaHavePokemon:
 	; You gotta have #MON to call!
-	text_jump UnknownText_0x1c1006
+	text_jump _PCGottaHavePokemonText
 	text_end
 
 .LogIn:
@@ -36,7 +36,7 @@ _BillsPC:
 
 .Text_What:
 	; What?
-	text_jump UnknownText_0x1c1024
+	text_jump _PCWhatText
 	text_end
 
 .LogOut:
@@ -44,7 +44,7 @@ _BillsPC:
 
 .UseBillsPC:
 	ld hl, .MenuDataHeader
-	call LoadMenuDataHeader
+	call LoadMenuHeader
 	ld a, $1
 .loop
 	ld [wMenuCursorBuffer], a
@@ -128,7 +128,7 @@ BillsPC_MovePKMNMenu:
 
 .Text_MonHoldingMail:
 	; There is a #MON holding MAIL. Please remove the MAIL.
-	text_jump UnknownText_0x1c102b
+	text_jump _PCMonHoldingMailText
 	text_end
 
 BillsPC_DepositMenu:
@@ -195,10 +195,10 @@ ClearPCItemScreen:
 	rst ByteFill
 	hlcoord 0, 0
 	lb bc, 10, 18
-	call TextBox
+	call Textbox
 	hlcoord 0, 12
 	lb bc, 4, 18
-	call TextBox
+	call Textbox
 	call ApplyAttrAndTilemapInVBlank
 	jp SetPalettes ; load regular palettes?
 

@@ -138,6 +138,17 @@ LoadKeyItemIconPalette:
 	ld bc, KeyItemIconPalettes
 	jr LoadIconPalette
 
+LoadKeyItemIconPaletteForOverworld:
+	ld a, [wCurKeyItem]
+	ld bc, KeyItemIconPalettes
+	jr LoadIconPalette
+
+LoadApricornIconPalette:
+	ld a, [wCurFruit]
+	dec a
+	ld bc, ApricornIconPalettes
+	jr LoadIconPalette
+
 LoadItemIconPalette:
 	ld a, [wCurSpecies]
 	ld bc, ItemIconPalettes
@@ -155,13 +166,9 @@ LoadIconPalette:
 	jp FarCopyColorWRAM
 
 LoadTMHMIconPalette:
-	ld a, [wCurTMHM]
-	dec a
-	ld hl, TMHMTypes
-	ld b, 0
-	ld c, a
-	add hl, bc
-	ld a, [hl]
+	ld a, [wNamedObjectIndexBuffer]
+	ld hl, Moves + MOVE_TYPE
+	call GetMoveProperty
 	ld hl, TMHMTypeIconPals
 	ld c, a
 	ld b, 0
@@ -367,10 +374,10 @@ ApplyAttrMap:
 	jr nz, .col
 	ld a, BG_MAP_WIDTH - SCREEN_WIDTH
 	add e
-	jr nc, .okay
-	inc d
-.okay
 	ld e, a
+	adc d
+	sub e
+	ld d, a
 	dec b
 	jr nz, .row
 	xor a
@@ -498,7 +505,7 @@ GetMonPalettePointer:
 	; b = form
 	inc hl ; Form is in the byte after Shiny
 	ld a, [hl]
-	and FORM_MASK
+	and BASEMON_MASK
 	ld b, a
 	; bc = index
 	call GetSpeciesAndFormIndex
@@ -747,7 +754,7 @@ LoadMapPals:
 	jr z, .outside
 	cp ROUTE
 	jr z, .outside
-	cp ENVIRONMENT_5
+	cp ISOLATED
 	ret nz
 .outside
 	ld a, [wMapGroup]

@@ -1,11 +1,9 @@
 
 ProfOaksPC:
 	ld hl, OakPCText1
-	call MenuTextBox
+	call MenuTextbox
 	call YesNoBox
-	jr c, .shutdown
-	call ProfOaksPCBoot ; player chose "yes"?
-.shutdown
+	call nc, ProfOaksPCBoot ; player chose "yes"?
 	ld hl, OakPCText4
 	call PrintText
 	call JoyWaitAorB
@@ -34,18 +32,18 @@ Rate:
 	ld hl, wPokedexSeen
 	ld b, wEndPokedexSeen - wPokedexSeen
 	call CountSetBits
-	ld [wd002], a
+	ld [wTempPokedexSeenCount], a
 	ld hl, wPokedexCaught
 	ld b, wEndPokedexCaught - wPokedexCaught
 	call CountSetBits
-	ld [wd003], a
+	ld [wTempPokedexCaughtCount], a
 
 ; print appropriate rating
 	call .UpdateRatingBuffers
 	ld hl, OakPCText3
 	call PrintText
 	call JoyWaitAorB
-	ld a, [wd003]
+	ld a, [wTempPokedexCaughtCount]
 	ld hl, OakRatings
 	call FindOakRating
 	push de
@@ -55,10 +53,10 @@ Rate:
 
 .UpdateRatingBuffers:
 	ld hl, wStringBuffer3
-	ld de, wd002
+	ld de, wTempPokedexSeenCount
 	call .UpdateRatingBuffer
 	ld hl, wStringBuffer4
-	ld de, wd003
+	ld de, wTempPokedexCaughtCount
 	; fallthrough
 
 .UpdateRatingBuffer:

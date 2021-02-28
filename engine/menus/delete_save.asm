@@ -9,17 +9,31 @@ _DeleteSaveData:
 	ld hl, .Text_ClearAllSaveData
 	call PrintText
 	ld hl, TitleScreenNoYesMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	call VerticalMenu
 	ret c
 	ld a, [wMenuCursorY]
 	cp $1
 	ret z
-	farjp EmptyAllSRAMBanks
+
+	xor a
+	call .EmptyBank
+	ld a, 1
+	call .EmptyBank
+	ld a, 2
+	call .EmptyBank
+	ld a, 3
+.EmptyBank:
+	call GetSRAMBank
+	ld hl, SRAM_Begin
+	ld bc, SRAM_End - SRAM_Begin
+	xor a
+	rst ByteFill
+	jp CloseSRAM
 
 .Text_ClearAllSaveData:
 	; Clear all save data?
-	text_jump UnknownText_0x1c564a
+	text_jump _ClearAllSaveDataText
 	text_end
 
 _ResetInitialOptions:
@@ -33,7 +47,7 @@ _ResetInitialOptions:
 	ld hl, .Text_ResetInitialOptions
 	call PrintText
 	ld hl, TitleScreenNoYesMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	call VerticalMenu
 	ret c
 	ld a, [wMenuCursorY]

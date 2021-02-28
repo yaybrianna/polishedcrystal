@@ -104,10 +104,10 @@ Special_DisplayLinkRecord:
 	farcall DisplayLinkRecord
 	jp ExitAllMenus
 
-Special_KrissHousePC:
+Special_PlayersHousePC:
 	xor a
 	ldh [hScriptVar], a
-	farcall _KrissHousePC
+	farcall _PlayersHousePC
 	ld a, c
 	ldh [hScriptVar], a
 	ret
@@ -170,11 +170,11 @@ Special_CardFlip:
 	ld hl, _CardFlip
 	; fallthrough
 
-;Special_DummyNonfunctionalGameCornerGame:
+;Special_UnusedMemoryGame:
 ;	call Special_CheckCoins
 ;	ret c
-;	ld a, BANK(_DummyGame)
-;	ld hl, _DummyGame
+;	ld a, BANK(_MemoryGame)
+;	ld hl, _MemoryGame
 ;	call Special_StartGameCornerGame
 ;	ret
 
@@ -217,12 +217,12 @@ Special_CheckCoins:
 
 .NoCoinsText:
 	; You have no coins.
-	text_jump UnknownText_0x1bd3d7
+	text_jump _NoCoinsText
 	text_end
 
 .NoCoinCaseText:
 	; You don't have a COIN CASE.
-	text_jump UnknownText_0x1bd3eb
+	text_jump _NoCoinCaseText
 	text_end
 
 ScriptReturnCarry:
@@ -282,11 +282,9 @@ SpecialSnorlaxAwake:
 ; check background music
 	ld a, [wMapMusic]
 	cp MUSIC_POKE_FLUTE_CHANNEL
-	jr nz, .nope
 	ld a, TRUE
-	jr .done
-.nope
-	xor a
+	jr z, .done
+	xor a ; ld a, FALSE
 .done
 	ldh [hScriptVar], a
 	ret
@@ -509,7 +507,7 @@ BillBoxSwitchCheck:
 	pop af
 	dec a
 	ldh [hScriptVar], a
-	ld [wEngineBuffer1], a
+	ld [wTempScriptBuffer], a
 	ret
 
 BillBoxSwitch:
@@ -520,7 +518,7 @@ BillBoxSwitch:
 	ld a, BANK(wDecompressScratch)
 	call FarCopyWRAM
 	; change boxes (overwrites wMisc)
-	ld a, [wEngineBuffer1]
+	ld a, [wTempScriptBuffer]
 	ld e, a
 	farcall ChangeBoxSaveGame
 	; a = carry (didn't save) ? FALSE : TRUE

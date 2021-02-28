@@ -10,8 +10,8 @@ WonderTrade::
 	ld hl, .Text_WonderTradePrompt
 	call PrintText
 
-	ld b, 6
-	farcall SelectTradeOrDaycareMon
+	ld b, PARTYMENUACTION_GIVE_MON
+	farcall SelectTradeOrDayCareMon
 	ret c
 
 	ld a, MON_IS_EGG
@@ -142,7 +142,7 @@ DoWonderTrade:
 	call Trade_GetAttributeOfCurrentPartymon
 	ld b, h
 	ld c, l
-	farcall GetCaughtGender
+	call GetCaughtGender
 	ld [wPlayerTrademonCaughtData], a
 
 	xor a
@@ -261,8 +261,9 @@ DoWonderTrade:
 	; Random ability
 	ld a, 3
 	call RandomRange
+	inc a
 rept 5
-	sla a
+	add a
 endr
 	add b
 	ld b, a
@@ -369,7 +370,7 @@ GetGSBallPichu:
 	call Trade_GetAttributeOfCurrentPartymon
 	ld b, h
 	ld c, l
-	farcall GetCaughtGender
+	call GetCaughtGender
 	ld [wPlayerTrademonCaughtData], a
 	ld [wOTTrademonCaughtData], a
 

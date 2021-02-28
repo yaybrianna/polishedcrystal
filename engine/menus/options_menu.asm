@@ -6,7 +6,7 @@ OptionsMenu:
 	call ClearBGPalettes
 	hlcoord 0, 0
 	lb bc, SCREEN_HEIGHT - 2, SCREEN_WIDTH - 2
-	call TextBox
+	call Textbox
 	hlcoord 2, 2
 	ld de, StringOptions1
 	rst PlaceString
@@ -344,9 +344,7 @@ Options_Sound:
 .Display:
 	ldh a, [hJoyPressed]
 	and D_LEFT | D_RIGHT
-	jr z, .DontRestartMapMusic
-	call RestartMapMusic
-.DontRestartMapMusic
+	call nz, RestartMapMusic
 	hlcoord 11, 13
 	rst PlaceString
 	and a
@@ -604,7 +602,7 @@ Options_NextPrevious:
 	push de
 	hlcoord 0, 0
 	lb bc, 16, 18
-	call TextBox
+	call Textbox
 	pop de
 	hlcoord 2, 2
 	rst PlaceString

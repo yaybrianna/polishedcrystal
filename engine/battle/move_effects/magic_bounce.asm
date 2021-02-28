@@ -22,7 +22,7 @@ BattleCommand_bounceback:
 
 	; Someone behind Protect will not bounceback
 	ld a, [wAttackMissed]
-	cp 2
+	cp ATKFAIL_PROTECT
 	ret z
 
 	; Some moves bypass Substitute
@@ -64,7 +64,7 @@ BattleCommand_bounceback:
 	ld [wNamedObjectIndexBuffer], a
 	call GetMoveName
 	ld hl, BouncedBackText
-	call StdBattleTextBox
+	call StdBattleTextbox
 	farcall EnableAnimations
 
 	; Flag the bouncing
@@ -77,6 +77,8 @@ BattleCommand_bounceback:
 	xor 1
 	ld [wEnemyGoesFirst], a
 
+	call InvertDeferredSwitch
+
 	; Do the move
 	call UpdateMoveData
 	call BattleCommand_lowersub
@@ -86,6 +88,8 @@ BattleCommand_bounceback:
 	ld a, [wEnemyGoesFirst]
 	xor 1
 	ld [wEnemyGoesFirst], a
+
+	call InvertDeferredSwitch
 
 	ld a, BATTLE_VARS_SUBSTATUS2
 	call GetBattleVarAddr

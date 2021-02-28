@@ -143,8 +143,8 @@ BattleText_UserItemLetItMoveFirst::
 	text "<USER>'s"
 	line ""
 	text_from_ram wStringBuffer1
-	text " let it"
-	cont "move first."
+	text " let"
+	cont "it move first."
 	prompt
 
 BattleText_UserRecoveredPPUsing:
@@ -500,10 +500,10 @@ BattleText_ItemOnlyAllowsMove: ; choice items
 	text "!"
 	prompt
 
-BattleText_EncoreOnlyAllowsMove:
-	text "The encore"
-	line "only allows use"
-	cont "of "
+BattleText_MonCanOnlyUseMove:
+	text "<USER> can"
+	line "only use"
+	cont ""
 	text_from_ram wStringBuffer1
 	text "!"
 	prompt
@@ -685,6 +685,12 @@ InfatuationText:
 	text "<USER>'s"
 	line "infatuation kept"
 	cont "it from attacking!"
+	prompt
+
+NoLongerInfatuatedText:
+	text "<USER>'s"
+	line "no longer"
+	cont "infatuated!"
 	prompt
 
 ObliviousPreventedDestinyKnot:
@@ -1293,8 +1299,9 @@ IdentifiedText:
 	prompt
 
 StartPerishText:
-	text "Both #mon will"
-	line "faint in 3 turns!"
+	text "#mon that heard"
+	line "the song will"
+	cont "faint in 3 turns!"
 	prompt
 
 SandstormBrewedText:

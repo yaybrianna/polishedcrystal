@@ -7,7 +7,7 @@ PokemonCenterPC:
 	ld hl, PokeCenterPCText_AccessWhosePC
 	call PC_DisplayTextWaitMenu
 	ld hl, .TopMenu
-	call LoadMenuDataHeader
+	call LoadMenuHeader
 .loop
 	xor a
 	ldh [hBGMapMode], a
@@ -95,7 +95,7 @@ PC_CheckPartyForPokemon:
 
 .MustHavePokemonToUse:
 	; Bzzzzt! You must have a #MON to use this!
-	text_jump UnknownText_0x1c1328
+	text_jump _PokecenterPCCantUseText
 	text_end
 
 BillsPC:
@@ -161,9 +161,9 @@ PC_WaitPlaySFX:
 	pop de
 	jp PlaySFX
 
-_KrissHousePC:
+_PlayersHousePC:
 	call PC_PlayBootSound
-	ld hl, UnknownText_0x156ff
+	ld hl, PlayersPCTurnOnText
 	call PC_DisplayText
 	ld b, $1
 	call _PlayersPC
@@ -181,25 +181,25 @@ _KrissHousePC:
 	ld c, $1
 	ret
 
-UnknownText_0x156ff:
+PlayersPCTurnOnText:
 	; turned on the PC.
-	text_jump UnknownText_0x1c1353
+	text_jump _PlayersPCTurnOnText
 	text_end
 
 _PlayersPC:
 	ld a, b
 	ld [wWhichIndexSet], a
-	ld hl, UnknownText_0x157cc
+	ld hl, PlayersPCAskWhatDoText
 	call PC_DisplayTextWaitMenu
-	call Function15715
+	call .PlayersPC
 	jp ExitMenu
 
-Function15715:
+.PlayersPC:
 	xor a
 	ld [wPCItemsCursor], a
 	ld [wPCItemsScrollPosition], a
-	ld hl, KrissPCMenuData
-	call LoadMenuDataHeader
+	ld hl, PlayersPCMenuData
+	call LoadMenuHeader
 .asm_15722
 	call UpdateTimePals
 	call DoNthMenu
@@ -214,28 +214,28 @@ Function15715:
 .asm_15732
 	jp ExitMenu
 
-KrissPCMenuData:
+PlayersPCMenuData:
 	db %01000000
 	db  0,  0 ; top left corner coords (y, x)
 	db 12, 15 ; bottom right corner coords (y, x)
-	dw .KrissPCMenuData2
+	dw .PlayersPCMenuData2
 	db 1 ; default selected option
 
-.KrissPCMenuData2:
+.PlayersPCMenuData2:
 	db %10100000 ; bit7
 	db 0 ; # items?
-	dw .KrissPCMenuList1
+	dw .PlayersPCMenuList1
 	dw PlaceNthMenuStrings
-	dw .KrissPCMenuPointers
+	dw .PlayersPCMenuPointers
 
-.KrissPCMenuPointers:
-	dw KrisWithdrawItemMenu, .WithdrawItem
-	dw KrisDepositItemMenu,  .DepositItem
-	dw KrisTossItemMenu,     .TossItem
-	dw KrisMailBoxMenu,      .MailBox
-	dw KrisDecorationMenu,   .Decoration
-	dw KrisLogOffMenu,       .LogOff
-	dw KrisLogOffMenu,       .TurnOff
+.PlayersPCMenuPointers:
+	dw PlayerWithdrawItemMenu, .WithdrawItem
+	dw PlayerDepositItemMenu,  .DepositItem
+	dw PlayerTossItemMenu,     .TossItem
+	dw PlayerMailBoxMenu,      .MailBox
+	dw PlayerDecorationMenu,   .Decoration
+	dw PlayerLogOffMenu,       .LogOff
+	dw PlayerLogOffMenu,       .TurnOff
 
 .WithdrawItem: db "Withdraw Item@"
 .DepositItem:  db "Deposit Item@"
@@ -253,7 +253,7 @@ DECORATION    EQU 4
 TURN_OFF      EQU 5
 LOG_OFF       EQU 6
 
-.KrissPCMenuList1:
+.PlayersPCMenuList1:
 	db 5
 	db WITHDRAW_ITEM
 	db DEPOSIT_ITEM
@@ -261,7 +261,7 @@ LOG_OFF       EQU 6
 	db MAIL_BOX
 	db TURN_OFF
 	db -1
-;.KrissPCMenuList2:
+;.PlayersPCMenuList2:
 	db 6
 	db WITHDRAW_ITEM
 	db DEPOSIT_ITEM
@@ -276,17 +276,17 @@ PC_DisplayTextWaitMenu:
 	push af
 	set NO_TEXT_SCROLL, a
 	ld [wOptions1], a
-	call MenuTextBox
+	call MenuTextbox
 	pop af
 	ld [wOptions1], a
 	ret
 
-UnknownText_0x157cc:
+PlayersPCAskWhatDoText:
 	; What do you want to do?
-	text_jump UnknownText_0x1c1368
+	text_jump _PlayersPCAskWhatDoText
 	text_end
 
-KrisWithdrawItemMenu:
+PlayerWithdrawItemMenu:
 	call LoadStandardMenuHeader
 	farcall ClearPCItemScreen
 .loop
@@ -302,7 +302,7 @@ KrisWithdrawItemMenu:
 
 .Submenu:
 	ld hl, .HowManyText
-	call MenuTextBox
+	call MenuTextbox
 	farcall SelectQuantityToToss
 	call ExitMenu
 	call ExitMenu
@@ -323,28 +323,28 @@ KrisWithdrawItemMenu:
 	call TossItem
 	predef PartyMonItemName
 	ld hl, .WithdrewText
-	call MenuTextBox
+	call MenuTextbox
 	xor a
 	ldh [hBGMapMode], a
 	jp ExitMenu
 
 .PackFull:
 	ld hl, .NoRoomText
-	jp MenuTextBoxBackup
+	jp MenuTextboxBackup
 
 .HowManyText:
-	text_jump _KrissPCHowManyWithdrawText
+	text_jump _PlayersPCHowManyWithdrawText
 	text_end
 
 .WithdrewText:
-	text_jump _KrissPCWithdrewItemsText
+	text_jump _PlayersPCWithdrewItemsText
 	text_end
 
 .NoRoomText:
-	text_jump _KrissPCNoRoomWithdrawText
+	text_jump _PlayersPCNoRoomWithdrawText
 	text_end
 
-KrisTossItemMenu:
+PlayerTossItemMenu:
 	call LoadStandardMenuHeader
 	farcall ClearPCItemScreen
 .loop
@@ -359,20 +359,20 @@ KrisTossItemMenu:
 	xor a
 	ret
 
-KrisDecorationMenu:
-	farcall _KrisDecorationMenu
+PlayerDecorationMenu:
+	farcall _PlayerDecorationMenu
 	ld a, c
 	and a
 	ret z
 	scf
 	ret
 
-KrisLogOffMenu:
+PlayerLogOffMenu:
 	xor a
 	scf
 	ret
 
-KrisDepositItemMenu:
+PlayerDepositItemMenu:
 	call .CheckItemsInBag
 	jr c, .nope
 	call DisableSpriteUpdates
@@ -380,7 +380,7 @@ KrisDepositItemMenu:
 	farcall DepositSellInitPackBuffers
 .loop
 	farcall DepositSellPack
-	ld a, [wcf66]
+	ld a, [wPackUsedItem]
 	and a
 	jr z, .close
 	call .TryDepositItem
@@ -398,13 +398,13 @@ KrisDepositItemMenu:
 	farcall HasNoItems
 	ret nc
 	ld hl, .NoItemsInBag
-	call MenuTextBoxBackup
+	call MenuTextboxBackup
 	scf
 	ret
 
 .NoItemsInBag:
 	; No items here!
-	text_jump UnknownText_0x1c13df
+	text_jump _PlayersPCNoItemsText
 	text_end
 
 .TryDepositItem:
@@ -451,7 +451,7 @@ KrisDepositItemMenu:
 
 .DepositItem_:
 	ld hl, .HowManyText
-	call MenuTextBox
+	call MenuTextbox
 	farcall SelectQuantityToToss
 	push af
 	call ExitMenu
@@ -485,23 +485,23 @@ KrisDepositItemMenu:
 	ret
 
 .CantDepositItemText:
-	text_jump _KrissPCCantDepositItemText
+	text_jump _PlayersPCCantDepositItemText
 	text_end
 
 .HowManyText:
-	text_jump _KrissPCHowManyDepositText
+	text_jump _PlayersPCHowManyDepositText
 	text_end
 
 .DepositText:
-	text_jump _KrissPCDepositItemsText
+	text_jump _PlayersPCDepositItemsText
 	text_end
 
 .NoRoomText:
-	text_jump _KrissPCNoRoomDepositText
+	text_jump _PlayersPCNoRoomDepositText
 	text_end
 
-KrisMailBoxMenu:
-	farcall _KrisMailBoxMenu
+PlayerMailBoxMenu:
+	farcall _PlayerMailBoxMenu
 	xor a
 	ret
 
@@ -514,10 +514,10 @@ PCItemsJoypad:
 	xor a
 	ld [wSpriteUpdatesEnabled], a
 	ld hl, .PCItemsMenuData
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	hlcoord 0, 0
 	lb bc, 10, 18
-	call TextBox
+	call Textbox
 	ld a, [wPCItemsCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wPCItemsScrollPosition]
@@ -590,35 +590,35 @@ PCItemsJoypad:
 	dba UpdateItemDescription
 
 PC_DisplayText:
-	call MenuTextBox
+	call MenuTextbox
 	jp ExitMenu
 
 PokeCenterPCText_BootedUpPC:
 	; turned on the PC.
-	text_jump UnknownText_0x1c144d
+	text_jump _PokecenterPCTurnOnText
 	text_end
 
 PokeCenterPCText_AccessWhosePC:
 	; Access whose PC?
-	text_jump UnknownText_0x1c1462
+	text_jump _PokecenterPCWhoseText
 	text_end
 
 PokeCenterPCText_AccessedBillsPC:
 	; BILL's PC accessed. #MON Storage System opened.
-	text_jump UnknownText_0x1c1474
+	text_jump _PokecenterBillsPCText
 	text_end
 
 PokeCenterPCText_AccessedOwnPC:
 	; Accessed own PC. Item Storage System opened.
-	text_jump UnknownText_0x1c14a4
+	text_jump _PokecenterPlayersPCText
 	text_end
 
 PokeCenterPCText_AccessedOaksPC:
 	; PROF.OAK's PC accessed. #DEX Rating System opened.
-	text_jump UnknownText_0x1c14d2
+	text_jump _PokecenterOaksPCText
 	text_end
 
 PokeCenterPCText_LinkClosed:
 	; … Link closed…
-	text_jump UnknownText_0x1c1505
+	text_jump _PokecenterPCOaksClosedText
 	text_end

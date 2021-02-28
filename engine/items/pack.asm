@@ -43,7 +43,7 @@ Pack:
 	xor a
 	ldh [hBGMapMode], a
 	call Pack_InitGFX
-	ld a, [wcf64]
+	ld a, [wPackJumptableIndex]
 	ld [wJumptableIndex], a
 	jp Pack_InitColors
 
@@ -56,7 +56,7 @@ Pack:
 
 .ItemsPocketMenu:
 	ld hl, ItemsPocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wItemsPocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wItemsPocketScrollPosition]
@@ -78,7 +78,7 @@ Pack:
 
 .MedicinePocketMenu:
 	ld hl, MedicinePocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wMedicinePocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wMedicinePocketScrollPosition]
@@ -100,7 +100,7 @@ Pack:
 
 .BallsPocketMenu:
 	ld hl, BallsPocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wBallsPocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wBallsPocketScrollPosition]
@@ -162,7 +162,7 @@ Pack:
 
 .BerriesPocketMenu:
 	ld hl, BerriesPocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wBerriesPocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wBerriesPocketScrollPosition]
@@ -207,7 +207,7 @@ Pack:
 
 PackBuildMenu:
 	push de
-	call LoadMenuDataHeader
+	call LoadMenuHeader
 	call VerticalMenu
 	call ExitMenu
 	pop hl
@@ -236,7 +236,7 @@ PackSortMenu:
 	ld de, Jumptable_SortItems
 .got_sort_menu
 	push de
-	call LoadMenuDataHeader
+	call LoadMenuHeader
 	call VerticalMenu
 	call ExitMenu
 	jr nc, .no_quit
@@ -517,7 +517,7 @@ TossMenu:
 	ret c
 	call Pack_GetItemName
 	ld hl, Text_ConfirmThrowAway
-	call MenuTextBox
+	call MenuTextbox
 	call YesNoBox
 	push af
 	call ExitMenu
@@ -616,7 +616,7 @@ GiveItem:
 .give
 	ld a, [wJumptableIndex]
 	push af
-	ld a, [wcf64]
+	ld a, [wPackJumptableIndex]
 	push af
 	call GetCurNick
 	ld hl, wStringBuffer1
@@ -625,7 +625,7 @@ GiveItem:
 	rst CopyBytes
 	call TryGiveItemToPartymon
 	pop af
-	ld [wcf64], a
+	ld [wPackJumptableIndex], a
 	pop af
 	ld [wJumptableIndex], a
 .finish
@@ -689,7 +689,7 @@ BattlePack:
 	xor a
 	ldh [hBGMapMode], a
 	call Pack_InitGFX
-	ld a, [wcf64]
+	ld a, [wPackJumptableIndex]
 	ld [wJumptableIndex], a
 	jp Pack_InitColors
 
@@ -702,7 +702,7 @@ BattlePack:
 
 .ItemsPocketMenu:
 	ld hl, ItemsPocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wBattleItemsPocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wBattleItemsPocketScrollPosition]
@@ -724,7 +724,7 @@ BattlePack:
 
 .MedicinePocketMenu:
 	ld hl, MedicinePocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wBattleMedicinePocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wBattleMedicinePocketScrollPosition]
@@ -746,7 +746,7 @@ BattlePack:
 
 .BallsPocketMenu:
 	ld hl, BallsPocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wBattleBallsPocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wBattleBallsPocketScrollPosition]
@@ -775,7 +775,8 @@ BattlePack:
 	lb bc, $5, $9 ; Balls, Berries
 	call Pack_InterpretJoypad
 	ret c
-	jp TMHMSubmenu
+	jp nz, PackSortMenu
+	jp KeyItemSubmenu.unusable
 
 .InitBerriesPocket:
 	ld a, BERRIES - 1
@@ -786,7 +787,7 @@ BattlePack:
 
 .BerriesPocketMenu:
 	ld hl, BerriesPocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wBattleBerriesPocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wBattleBerriesPocketScrollPosition]
@@ -818,10 +819,6 @@ BattlePack:
 	farcall CheckKeyItemContext
 	ld a, [wItemAttributeParamBuffer]
 	jp KeyItemSubmenu
-
-TMHMSubmenu:
-	jp nz, PackSortMenu
-	jr KeyItemSubmenu
 
 ItemSubmenu:
 	jp nz, PackSortMenu
@@ -905,6 +902,7 @@ KeyItemSubmenu:
 	ld hl, MenuDataHeader_Use
 	ld de, .UsableJumptable
 	jr nz, .proceed
+.unusable:
 	ld hl, MenuDataHeader_Quit
 	ld de, .UnusableJumptable
 .proceed
@@ -975,9 +973,9 @@ InitPackBuffers:
 	inc a
 	add a
 	dec a
-	ld [wcf64], a
+	ld [wPackJumptableIndex], a
 	xor a
-	ld [wcf66], a
+	ld [wPackUsedItem], a
 	xor a
 	ld [wSwitchItem], a
 	ret
@@ -985,10 +983,10 @@ InitPackBuffers:
 DepositSellInitPackBuffers:
 	xor a
 	ldh [hBGMapMode], a
-	ld [wJumptableIndex], a
-	ld [wcf64], a
-	ld [wCurPocket], a
-	ld [wcf66], a
+	ld [wJumptableIndex], a ; PACKSTATE_INITGFX
+	ld [wPackJumptableIndex], a ; PACKSTATE_INITGFX
+	ld [wCurPocket], a ; ITEM_POCKET
+	ld [wPackUsedItem], a
 	ld [wSwitchItem], a
 	call Pack_InitGFX
 	jp Pack_InitColors
@@ -1015,7 +1013,7 @@ DepositSellPack:
 	ld a, ITEM - 1
 	call InitPocket
 	ld hl, PC_Mart_ItemsPocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wItemsPocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wItemsPocketScrollPosition]
@@ -1031,7 +1029,7 @@ DepositSellPack:
 	ld a, MEDICINE - 1
 	call InitPocket
 	ld hl, PC_Mart_MedicinePocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wMedicinePocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wMedicinePocketScrollPosition]
@@ -1047,7 +1045,7 @@ DepositSellPack:
 	ld a, BALL - 1
 	call InitPocket
 	ld hl, PC_Mart_BallsPocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wBallsPocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wBallsPocketScrollPosition]
@@ -1071,7 +1069,7 @@ DepositSellPack:
 	ld a, BERRIES - 1
 	call InitPocket
 	ld hl, PC_Mart_BerriesPocketMenuDataHeader
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	ld a, [wBerriesPocketCursor]
 	ld [wMenuCursorBuffer], a
 	ld a, [wBerriesPocketScrollPosition]
@@ -1115,13 +1113,13 @@ DepositSellTutorial_InterpretJoypad:
 
 .a_button
 	ld a, TRUE
-	ld [wcf66], a
+	ld [wPackUsedItem], a
 	and a
 	ret
 
 .b_button
-	xor a
-	ld [wcf66], a
+	xor a ; FALSE
+	ld [wPackUsedItem], a
 	and a
 	ret
 
@@ -1167,8 +1165,8 @@ TutorialPack:
 	call .RunJumptable
 	call DepositSellTutorial_InterpretJoypad
 	jr c, .loop
-	xor a
-	ld [wcf66], a
+	xor a ; FALSE
+	ld [wPackUsedItem], a
 	ret
 
 .autoinput_right_right_a
@@ -1256,7 +1254,7 @@ TutorialPack:
 	push hl
 	call InitPocket
 	pop hl
-	call CopyMenuDataHeader
+	call CopyMenuHeader
 	jp ScrollingMenu
 
 Pack_JumptableNext:
@@ -1267,15 +1265,15 @@ Pack_JumptableNext:
 Pack_QuitNoScript:
 	ld hl, wJumptableIndex
 	set 7, [hl]
-	xor a
-	ld [wcf66], a
+	xor a ; FALSE
+	ld [wPackUsedItem], a
 	ret
 
 Pack_QuitRunScript:
 	ld hl, wJumptableIndex
 	set 7, [hl]
 	ld a, TRUE
-	ld [wcf66], a
+	ld [wPackUsedItem], a
 	ret
 
 Pack_PrintTextNoScroll:
@@ -1346,20 +1344,20 @@ DrawPackGFX:
 	jp DecompressRequest2bpp
 
 .MaleGFX:
-	dw PackM0GFX
-	dw PackM1GFX
-	dw PackM2GFX
-	dw PackM3GFX
-	dw PackM4GFX
-	dw PackM5GFX
+	dw PackM0GFX ; far-ok
+	dw PackM1GFX ; far-ok
+	dw PackM2GFX ; far-ok
+	dw PackM3GFX ; far-ok
+	dw PackM4GFX ; far-ok
+	dw PackM5GFX ; far-ok
 
 .FemaleGFX:
-	dw PackF0GFX
-	dw PackF1GFX
-	dw PackF2GFX
-	dw PackF3GFX
-	dw PackF4GFX
-	dw PackF5GFX
+	dw PackF0GFX ; far-ok
+	dw PackF1GFX ; far-ok
+	dw PackF2GFX ; far-ok
+	dw PackF3GFX ; far-ok
+	dw PackF4GFX ; far-ok
+	dw PackF5GFX ; far-ok
 
 Pack_InterpretJoypad:
 	ld hl, wMenuJoypad
@@ -1400,7 +1398,7 @@ Pack_InterpretJoypad:
 .d_left
 	ld a, b
 	ld [wJumptableIndex], a
-	ld [wcf64], a
+	ld [wPackJumptableIndex], a
 	push de
 	ld de, SFX_SWITCH_POCKETS
 	call PlaySFX
@@ -1411,7 +1409,7 @@ Pack_InterpretJoypad:
 .d_right
 	ld a, c
 	ld [wJumptableIndex], a
-	ld [wcf64], a
+	ld [wPackJumptableIndex], a
 	push de
 	ld de, SFX_SWITCH_POCKETS
 	call PlaySFX
@@ -1486,7 +1484,7 @@ Pack_InitGFX:
 ; Place the textbox for displaying the item description
 	hlcoord 0, SCREEN_HEIGHT - 4 - 2
 	lb bc, 4, SCREEN_WIDTH - 2
-	call TextBox
+	call Textbox
 	call EnableLCD
 	jp DrawPackGFX
 
@@ -1701,22 +1699,22 @@ Text_NoEmptySlot:
 
 Text_ThrowAwayHowMany:
 	; Throw away how many?
-	text_jump UnknownText_0x1c0ba5
+	text_jump _AskThrowAwayText
 	text_end
 
 Text_ConfirmThrowAway:
 	; Throw away @ @ (S)?
-	text_jump UnknownText_0x1c0bbb
+	text_jump _AskQuantityThrowAwayText
 	text_end
 
 Text_ThrewAway:
 	; Threw away @ (S).
-	text_jump UnknownText_0x1c0bd8
+	text_jump _ThrewAwayText
 	text_end
 
 Text_ThisIsntTheTime:
 	; OAK:  ! This isn't the time to use that!
-	text_jump UnknownText_0x1c0bee
+	text_jump _OakThisIsntTheTimeText
 	text_end
 
 TextJump_YouDontHaveAPkmn:
@@ -1726,7 +1724,7 @@ TextJump_YouDontHaveAPkmn:
 
 Text_RegisteredItem:
 	; Registered the @ .
-	text_jump UnknownText_0x1c0c2e
+	text_jump _RegisteredItemText
 	text_end
 
 Text_UnregisteredItem:
@@ -1735,12 +1733,12 @@ Text_UnregisteredItem:
 
 Text_CantRegister:
 	; You can't register that item.
-	text_jump UnknownText_0x1c0c45
+	text_jump _CantRegisterText
 	text_end
 
 Text_MoveItemWhere:
 	; Where should this be moved to?
-	text_jump UnknownText_0x1c0c63
+	text_jump _AskItemMoveText
 	text_end
 
 Text_PackEmptyString:
@@ -1764,7 +1762,7 @@ Special_ChooseItem::
 .loop
 	call DepositSellPack
 
-	ld a, [wcf66]
+	ld a, [wPackUsedItem]
 	and a
 	ret z
 

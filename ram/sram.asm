@@ -87,7 +87,7 @@ sMapData::     ds wCurMapDataEnd - wCurMapData
 sPokemonData:: ds wPokemonDataEnd - wPokemonData
 sGameDataEnd::
 
-	ds $18a
+	ds 394
 
 sChecksum:: dw
 
@@ -170,26 +170,23 @@ sHallOfFameEnd::
 
 SECTION "SRAM Battle Tower", SRAM
 
-; Battle Tower data must be in SRAM because you can save and leave between battles
-sBattleTowerChallengeState::
-; 0: normal
-; 2: battle tower
-	db
+; Battle Tower data must be in SRAM because you can reset between battles
+sBattleTowerChallengeState:: db ; current challenge progress status
 
 sBattleTower::
-sNrOfBeatenBattleTowerTrainers:: db
-sBTChoiceOfLevelGroup:: db
+sBT_CurTrainer:: db
+
+	ds 1 ; unused, may be 0-4 in old saves
+
 ; Battle Tower trainers are saved here, so nobody appears more than once
 sBTTrainers:: ds BATTLETOWER_NROFTRAINERS
-sBattleTowerSaveFileFlags:: db
 
-sBTMonOfTrainers::
-sBTMonPrevTrainer1:: db
-sBTMonPrevTrainer2:: db
-sBTMonPrevTrainer3:: db
-sBTMonPrevPrevTrainer1:: db
-sBTMonPrevPrevTrainer2:: db
-sBTMonPrevPrevTrainer3:: db
+	ds 1 ; unused, may be 0 or 2 in old saves
+
+sBT_PartySelections:: ds PARTY_LENGTH
+
+; Repeat prevention
+sBT_OTMonParties:: ds BATTLETOWER_PARTYDATA_SIZE * BATTLETOWER_SAVEDPARTIES
 
 
 SECTION "Boxes 1-7",  SRAM

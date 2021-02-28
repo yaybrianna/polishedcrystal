@@ -4,8 +4,10 @@ HandleNewMap:
 	ld a, MAPCALLBACK_NEWMAP
 	call RunMapCallback
 HandleContinueMap:
-	farcall ClearCmdQueue
-	ld a, MAPCALLBACK_CMDQUEUE
+	xor a
+	ld [wStoneTableAddress], a
+	ld [wStoneTableAddress+1], a
+	ld a, MAPCALLBACK_STONETABLE
 	call RunMapCallback
 	call GetMapTimeOfDay
 	ld [wMapTimeOfDay], a
@@ -181,7 +183,7 @@ EnterMapWarp:
 
 .SaveDigWarp:
 	call GetMapEnvironment
-	call CheckOutdoorMap
+	call CheckOutdoorOrIsolatedMap
 	ret nz
 	ld a, [wNextMapGroup]
 	ld b, a
@@ -190,13 +192,6 @@ EnterMapWarp:
 	call GetAnyMapEnvironment
 	call CheckIndoorMap
 	ret nz
-	ld a, [wPrevMapGroup]
-	cp GROUP_TIN_TOWER_ROOF
-	jr nz, .not_tin_tower_roof
-	ld a, [wPrevMapNumber]
-	cp MAP_TIN_TOWER_ROOF
-	ret z
-.not_tin_tower_roof
 	ld a, [wPrevWarp]
 	ld [wDigWarpNumber], a
 	ld a, [wPrevMapGroup]

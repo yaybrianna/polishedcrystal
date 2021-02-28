@@ -868,9 +868,8 @@ DrawChData:
 	jr nz, .blank_hit
 	ld a, [wNoiseHit]
 	and a
-	jr z, .blank_hit
 	ld a, MP_METER8
-	jr .got_hit
+	jr nz, .got_hit
 .blank_hit
 	ld a, " "
 .got_hit
@@ -1525,7 +1524,7 @@ SongSelector:
 
 	hlcoord 0, 0
 	lb bc, SCREEN_HEIGHT - 2, SCREEN_WIDTH - 2
-	call TextBox
+	call Textbox
 
 	hlcoord 0, MP_LIST_CURSOR_Y
 	ld [hl], "▶"
