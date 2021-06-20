@@ -5,7 +5,7 @@ _LoadStandardOpaqueFont::
 	call _LoadStandardMaybeOpaqueFont
 	ld hl, vTiles2 tile " "
 	ld de, TextboxSpaceGFX
-	jp GetOpaque1bppFontTile
+	jmp GetOpaque1bppFontTile
 
 _LoadStandardFont::
 	xor a
@@ -25,7 +25,7 @@ _LoadStandardMaybeOpaqueFont:
 	lb bc, BANK(FontCommon), 11
 	pop af
 	ldh [hRequestOpaque1bpp], a
-	jp GetMaybeOpaque1bpp
+	jmp GetMaybeOpaque1bpp
 
 LoadStandardFontPointer::
 	ld hl, .FontPointers
@@ -60,25 +60,21 @@ _LoadFontsBattleExtra::
 
 LoadFrame::
 	ld a, [wTextboxFrame]
-	ld bc, TILES_PER_FRAME * LEN_1BPP_TILE
+	ld bc, TEXTBOX_FRAME_TILES * LEN_1BPP_TILE
 	ld hl, Frames
 	rst AddNTimes
 	ld d, h
 	ld e, l
 	ld hl, vTiles0 tile "┌"
-	lb bc, BANK(Frames), TILES_PER_FRAME
+	lb bc, BANK(Frames), TEXTBOX_FRAME_TILES
 	call Get1bpp
 	ld hl, vTiles2 tile " "
 	ld de, TextboxSpaceGFX
 	lb bc, BANK(TextboxSpaceGFX), 1
-	jp Get1bpp
+	jmp Get1bpp
 
 LoadBattleFontsHPBar:
 	call _LoadFontsBattleExtra
-
-LoadStatusIcons:
-	call LoadPlayerStatusIcon
-	jp LoadEnemyStatusIcon
 
 LoadPlayerStatusIcon:
 	push de
@@ -96,6 +92,10 @@ LoadPlayerStatusIcon:
 	farcall LoadPlayerStatusIconPalette
 	pop de
 	ret
+
+LoadStatusIcons:
+	call LoadPlayerStatusIcon
+	; fallthrough
 
 LoadEnemyStatusIcon:
 	push de

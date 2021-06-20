@@ -62,7 +62,7 @@ CeladonUniversityHyperTestRoomWestwoodScript:
 	waitsfx
 	playsound SFX_ELEVATOR_END
 	writetext .CorrectText
-	buttonsound
+	promptbutton
 
 	writetext .Question2IntroText
 	waitbutton
@@ -78,7 +78,7 @@ CeladonUniversityHyperTestRoomWestwoodScript:
 	waitsfx
 	playsound SFX_ELEVATOR_END
 	writetext .CorrectText
-	buttonsound
+	promptbutton
 
 	writetext .Question3IntroText
 	waitbutton
@@ -90,7 +90,7 @@ CeladonUniversityHyperTestRoomWestwoodScript:
 	waitsfx
 	playsound SFX_ELEVATOR_END
 	writetext .CorrectText
-	buttonsound
+	promptbutton
 
 	writetext .Question4IntroText
 	waitbutton
@@ -102,7 +102,7 @@ CeladonUniversityHyperTestRoomWestwoodScript:
 	waitsfx
 	playsound SFX_ELEVATOR_END
 	writetext .CorrectText
-	buttonsound
+	promptbutton
 
 	writetext .Question5IntroText
 	waitbutton
@@ -114,7 +114,7 @@ CeladonUniversityHyperTestRoomWestwoodScript:
 	waitsfx
 	playsound SFX_ELEVATOR_END
 	writetext .CorrectText
-	buttonsound
+	promptbutton
 
 	writetext .Question6IntroText
 	waitbutton
@@ -126,22 +126,15 @@ CeladonUniversityHyperTestRoomWestwoodScript:
 	waitsfx
 	playsound SFX_ELEVATOR_END
 	writetext .CorrectText
-	buttonsound
+	promptbutton
 
 	setevent EVENT_PASSED_CELADON_HYPER_TEST
 .GiveMagikarp:
 	writetext .CongratulationsText
 	waitbutton
 
-	checkcode VAR_PARTYCOUNT
-	ifequal 6, .PartyFull
-	writetext .ReceivedMagikarpText
-	playsound SFX_CAUGHT_MON
-	waitsfx
-	givepoke MAGIKARP, MAGIKARP_MASK_FORM, 10, EVIOLITE
-	special TeachMagikarpDragonRage
-	writebyte ULTRA_BALL
-	special SetLastPartyMonBall
+	givepoke MAGIKARP, MAGIKARP_MASK_FORM, 10, EVIOLITE, ULTRA_BALL, DRAGON_RAGE
+	iffalse_jumpopenedtext .PartyAndBoxFullText
 	setevent EVENT_GOT_DRAGON_RAGE_MAGIKARP
 	jumpopenedtext .TestOverText
 
@@ -149,9 +142,6 @@ CeladonUniversityHyperTestRoomWestwoodScript:
 	waitsfx
 	playsound SFX_WRONG
 	jumpopenedtext .WrongAnswerText
-
-.PartyFull:
-	jumpopenedtext .PartyFullText
 
 .GreetingText:
 	text "Prof.Westwood?"
@@ -272,11 +262,6 @@ CeladonUniversityHyperTestRoomWestwoodScript:
 	line "knows Dragon Rage!"
 	done
 
-.ReceivedMagikarpText:
-	text "<PLAYER> received"
-	line "Magikarp!"
-	done
-
 .TestOverText:
 	text "Our students have"
 	line "the tenacity of a"
@@ -286,9 +271,9 @@ CeladonUniversityHyperTestRoomWestwoodScript:
 	cont "And so do you!"
 	done
 
-.PartyFullText:
+.PartyAndBoxFullText:
 	text "Oh no! Your party"
-	line "is full…"
+	line "and box are full…"
 	done
 
 .RefusedText:

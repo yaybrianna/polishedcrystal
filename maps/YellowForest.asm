@@ -49,31 +49,31 @@ YellowForest_MapScriptHeader:
 
 YellowForestFlyPoint:
 	setflag ENGINE_FLYPOINT_YELLOW_FOREST
-	return
+	endcallback
 
 YellowForestTileScript:
 	checkscene
 	iftrue .underfoot
 	callasm YellowForest_OverheadBridgeAsm
-	return
+	endcallback
 
 .underfoot:
 	callasm YellowForest_UnderfootBridgeAsm
-	return
+	endcallback
 
 YellowForest_OverheadBridgeAsm:
 	changebridgeblock 32, 16, $9d, YELLOW_FOREST
 	changebridgeblock 34, 16, $9e, YELLOW_FOREST
 	changebridgeblock 36, 16, $9e, YELLOW_FOREST
 	changebridgeblock 38, 16, $9f, YELLOW_FOREST
-	jp BufferScreen
+	jmp BufferScreen
 
 YellowForest_UnderfootBridgeAsm:
 	changebridgeblock 32, 16, $86, YELLOW_FOREST
 	changebridgeblock 34, 16, $97, YELLOW_FOREST
 	changebridgeblock 36, 16, $97, YELLOW_FOREST
 	changebridgeblock 38, 16, $87, YELLOW_FOREST
-	jp BufferScreen
+	jmp BufferScreen
 
 YellowForestBridgeOverheadTrigger:
 	callasm YellowForest_OverheadBridgeAsm
@@ -88,7 +88,7 @@ YellowForestBridgeUnderfootTrigger:
 YellowForest_FinishBridge:
 	ld [wWalkingOnBridge], a
 	ld [wYellowForestSceneID], a ; setscene a
-	jp GenericFinishBridge
+	jmp GenericFinishBridge
 
 GenericTrainerSchoolgirlSarah:
 	generictrainer SCHOOLGIRL, SARAH, EVENT_BEAT_SCHOOLGIRL_SARAH, SchoolgirlSarahSeenText, SchoolgirlSarahBeatenText
@@ -141,7 +141,7 @@ YellowForestWalkerScript:
 	setevent EVENT_BEAT_WALKER
 	opentext
 	writetext YellowForestWalkerAfterText
-	buttonsound
+	promptbutton
 	verbosegivetmhm HM_FLY
 	setevent EVENT_GOT_HM02_FLY
 	writetext YellowForestWalkerFinalText
@@ -199,7 +199,7 @@ YellowBattleAfterBallScript:
 	opentext
 	writetext YellowForestYellowAfterText
 YellowTryGiveLightBallScript:
-	buttonsound
+	promptbutton
 	verbosegiveitem LIGHT_BALL
 	iffalse NoRoomForLightBallScript
 	setevent EVENT_GOT_LIGHT_BALL_FROM_YELLOW
@@ -224,7 +224,7 @@ YellowForestTutorSeedBombScript:
 	writetext Text_YellowForestTutorQuestion
 	yesorno
 	iffalse .TutorRefused
-	writebyte SEED_BOMB
+	setval SEED_BOMB
 	writetext ClearText
 	special Special_MoveTutor
 	ifequal $0, .TeachMove

@@ -4,7 +4,7 @@ MainMenu:
 	ld a, CGB_DIPLOMA
 	call GetCGBLayout
 	call SetPalettes
-	ld hl, wGameTimerPause
+	ld hl, wGameTimerPaused
 	res 0, [hl]
 	call MainMenu_GetWhichMenu
 	ld [wWhichIndexSet], a
@@ -145,10 +145,10 @@ MainMenu_PrintCurrentTimeAndDay:
 .PlaceBox:
 	call CheckRTCStatus
 	and $80
-	jp nz, SpeechTextbox
+	jmp nz, SpeechTextbox
 	hlcoord 0, 14
 	lb bc, 2, 18
-	jp Textbox
+	jmp Textbox
 
 .PlaceTime:
 	ld a, [wSaveFileExists]
@@ -156,7 +156,7 @@ MainMenu_PrintCurrentTimeAndDay:
 	ret z
 	call CheckRTCStatus
 	and $80
-	jp nz, .PrintTimeNotSet
+	jr nz, .PrintTimeNotSet
 
 ;; kroc - NoRTC patch
 ;; to get the main menu to show the correct time of the save,
@@ -173,16 +173,16 @@ endc
 
 	call UpdateTime
 	bccoord 1, 15
-	call Text_WeekDay
+	call TextCommand_DAY
 	decoord 4, 16
 	ldh a, [hHours]
 	ld c, a
 	farcall PrintHour
-	ld [hl], ":"
-	inc hl
+	ld a, ":"
+	ld [hli], a
 	ld de, hMinutes
 	lb bc, PRINTNUM_LEADINGZEROS | 1, 2
-	jp PrintNum
+	jmp PrintNum
 
 .PrintTimeNotSet:
 	hlcoord 1, 14

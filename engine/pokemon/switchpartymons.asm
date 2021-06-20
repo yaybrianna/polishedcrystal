@@ -34,7 +34,7 @@ _SwitchPartyMons:
 	dec c
 	jr nz, .gfx_loop
 	ld de, SFX_SWITCH_POKEMON
-	jp WaitPlaySFX
+	jmp WaitPlaySFX
 
 SwapMonAndMail:
 	push hl
@@ -78,12 +78,12 @@ SwapMonAndMail:
 	ld bc, PARTYMON_STRUCT_LENGTH
 	rst CopyBytes
 	ld a, [wBuffer2]
-	ld hl, wPartyMonOT
+	ld hl, wPartyMonOTs
 	call SkipNames
 	push hl
 	call .CopyNameTowSwitchMonBuffer
 	ld a, [wBuffer3]
-	ld hl, wPartyMonOT
+	ld hl, wPartyMonOTs
 	call SkipNames
 	pop de
 	push hl
@@ -128,7 +128,7 @@ SwapMonAndMail:
 	ld bc, MAIL_STRUCT_LENGTH
 	rst CopyBytes
 	call CloseSRAM
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 .CopyNameTowSwitchMonBuffer:
 	ld de, wSwitchMonBuffer

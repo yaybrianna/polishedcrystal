@@ -69,7 +69,7 @@ DeleteMailFromPC:
 	rst ByteFill
 	ld hl, sMailboxCount
 	dec [hl]
-	jp CloseSRAM
+	jmp CloseSRAM
 
 ReadMailMessage:
 	ld a, b
@@ -110,14 +110,14 @@ MoveMailFromPCToParty:
 	ld [hl], d
 	call CloseSRAM
 	pop bc
-	jp DeleteMailFromPC
+	jr DeleteMailFromPC
 
 GetMailboxCount:
 	ld a, BANK(sMailboxCount)
 	call GetSRAMBank
 	ld a, [sMailboxCount]
 	ld c, a
-	jp CloseSRAM
+	jmp CloseSRAM
 
 CheckPokeItem::
 	push bc
@@ -148,7 +148,7 @@ CheckPokeItem::
 
 ; Compare the mail message, byte for byte, with the expected message.
 	ld a, MAIL_MSG_LENGTH
-	ld [wd265], a
+	ld [wTempByteValue], a
 .loop
 	ld a, [de]
 	ld c, a
@@ -161,9 +161,9 @@ CheckPokeItem::
 	jr nz, .close_sram_return
 	inc hl
 	inc de
-	ld a, [wd265]
+	ld a, [wTempByteValue]
 	dec a
-	ld [wd265], a
+	ld [wTempByteValue], a
 	jr nz, .loop
 
 .done
@@ -172,7 +172,7 @@ CheckPokeItem::
 	jr c, .close_sram_return
 	xor a
 	ld [wPokemonWithdrawDepositParameter], a
-	predef RemoveMonFromPartyOrBox
+	predef RemoveMonFromParty
 	ld a, $1
 
 .close_sram_return
@@ -209,7 +209,7 @@ GivePokeItem::
 	rst CopyBytes
 	pop af
 	push af
-	ld hl, wPartyMonOT
+	ld hl, wPartyMonOTs
 	ld bc, NAME_LENGTH
 	rst AddNTimes
 	ld bc, NAME_LENGTH - 1
@@ -230,7 +230,7 @@ GivePokeItem::
 	pop bc
 	ld a, b
 	ld [de], a
-	jp CloseSRAM
+	jmp CloseSRAM
 
 BackupPartyMonMail:
 	ld a, BANK(sPartyMail)
@@ -243,7 +243,7 @@ BackupPartyMonMail:
 	ld de, sMailboxCountBackup
 	ld bc, 1 + 10 * MAIL_STRUCT_LENGTH
 	rst CopyBytes
-	jp CloseSRAM
+	jmp CloseSRAM
 
 RestorePartyMonMail:
 	ld a, BANK(sPartyMail)
@@ -256,7 +256,7 @@ RestorePartyMonMail:
 	ld de, sMailboxCount
 	ld bc, 1 + 10 * MAIL_STRUCT_LENGTH
 	rst CopyBytes
-	jp CloseSRAM
+	jmp CloseSRAM
 
 DeletePartyMonMail:
 	ld a, BANK(sPartyMail)
@@ -269,7 +269,7 @@ DeletePartyMonMail:
 	ld hl, sMailboxCount
 	ld bc, 1 + 10 * MAIL_STRUCT_LENGTH
 	rst ByteFill
-	jp CloseSRAM
+	jmp CloseSRAM
 
 IsAnyMonHoldingMail:
 	ld a, [wPartyCount]
@@ -295,14 +295,14 @@ _PlayerMailBoxMenu:
 	jr z, .nomail
 	call LoadStandardMenuHeader
 	call MailboxPC
-	jp CloseWindow
+	jmp CloseWindow
 
 .nomail
 	ld hl, .EmptyMailboxText
-	jp MenuTextboxBackup
+	jmp MenuTextboxBackup
 
 .EmptyMailboxText:
-	text_jump _EmptyMailboxText
+	text_far _EmptyMailboxText
 	text_end
 
 InitMail:
@@ -414,7 +414,7 @@ MailboxPC:
 	dec a
 	ld b, a
 	call ReadMailMessage
-	jp CloseSubmenu
+	jmp CloseSubmenu
 
 .PutInPack:
 	ld hl, .MessageLostText
@@ -431,7 +431,7 @@ MailboxPC:
 	call ReceiveItem
 	jr c, .put_in_bag
 	ld hl, .PackFullText
-	jp MenuTextboxBackup
+	jmp MenuTextboxBackup
 
 .put_in_bag
 	ld a, [wMenuSelection]
@@ -439,18 +439,18 @@ MailboxPC:
 	ld b, a
 	call DeleteMailFromPC
 	ld hl, .PutAwayText
-	jp MenuTextboxBackup
+	jmp MenuTextboxBackup
 
 .PutAwayText:
-	text_jump ClearedMailPutAwayText
+	text_far ClearedMailPutAwayText
 	text_end
 
 .PackFullText:
-	text_jump MailPackFullText
+	text_far MailPackFullText
 	text_end
 
 .MessageLostText:
-	text_jump MailMessageLostText
+	text_far MailMessageLostText
 	text_end
 
 .GetMailType:
@@ -463,7 +463,7 @@ MailboxPC:
 	rst AddNTimes
 	ld a, [hl]
 	ld [wCurItem], a
-	jp CloseSRAM
+	jmp CloseSRAM
 
 .AttachMail:
 	call FadeToMenu
@@ -510,18 +510,18 @@ MailboxPC:
 	call PrintText
 
 .exit2
-	jp CloseSubmenu
+	jmp CloseSubmenu
 
 .HoldingMailText:
-	text_jump MailAlreadyHoldingItemText
+	text_far MailAlreadyHoldingItemText
 	text_end
 
 .EggText:
-	text_jump MailEggText
+	text_far MailEggText
 	text_end
 
 .MailMovedText:
-	text_jump MailMovedFromBoxText
+	text_far MailMovedFromBoxText
 	text_end
 
 .TopMenuDataHeader:

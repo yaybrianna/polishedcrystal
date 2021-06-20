@@ -75,7 +75,7 @@ GoldenrodGameCornerTutorPayDayScript:
 	iffalse .NoSilverLeaf
 	yesorno
 	iffalse .TutorRefused
-	writebyte PAY_DAY
+	setval PAY_DAY
 	writetext ClearText
 	special Special_MoveTutor
 	ifequal $0, .TeachMove
@@ -113,36 +113,36 @@ GoldenrodGameCornerTMVendor_LoopScript: ; 056c36
 	iftrue GoldenrodGameCornerPrizeVendor_AlreadyHaveTMScript
 	checkcoins 4000
 	ifequal $2, GoldenrodGameCornerPrizeVendor_NotEnoughCoinsScript
-	tmhmtotext TM_FLAMETHROWER, $0
+	gettmhmname TM_FLAMETHROWER, $0
 	scall GoldenrodGameCornerPrizeVendor_ConfirmPurchaseScript
 	iffalse_jumpopenedtext GoldenrodGameCornerPrizeVendorQuitText
 	givetmhm TM_FLAMETHROWER
 	takecoins 4000
-	jump GoldenrodGameCornerTMVendor_FinishScript
+	sjump GoldenrodGameCornerTMVendor_FinishScript
 
 .thunderbolt:
 	checktmhm TM_THUNDERBOLT
 	iftrue GoldenrodGameCornerPrizeVendor_AlreadyHaveTMScript
 	checkcoins 4000
 	ifequal $2, GoldenrodGameCornerPrizeVendor_NotEnoughCoinsScript
-	tmhmtotext TM_THUNDERBOLT, $0
+	gettmhmname TM_THUNDERBOLT, $0
 	scall GoldenrodGameCornerPrizeVendor_ConfirmPurchaseScript
 	iffalse_jumpopenedtext GoldenrodGameCornerPrizeVendorQuitText
 	givetmhm TM_THUNDERBOLT
 	takecoins 4000
-	jump GoldenrodGameCornerTMVendor_FinishScript
+	sjump GoldenrodGameCornerTMVendor_FinishScript
 
 .ice_beam:
 	checktmhm TM_ICE_BEAM
 	iftrue GoldenrodGameCornerPrizeVendor_AlreadyHaveTMScript
 	checkcoins 4000
 	ifequal $2, GoldenrodGameCornerPrizeVendor_NotEnoughCoinsScript
-	tmhmtotext TM_ICE_BEAM, $0
+	gettmhmname TM_ICE_BEAM, $0
 	scall GoldenrodGameCornerPrizeVendor_ConfirmPurchaseScript
 	iffalse_jumpopenedtext GoldenrodGameCornerPrizeVendorQuitText
 	givetmhm TM_ICE_BEAM
 	takecoins 4000
-	jump GoldenrodGameCornerTMVendor_FinishScript
+	sjump GoldenrodGameCornerTMVendor_FinishScript
 
 GoldenrodGameCornerPrizeVendor_ConfirmPurchaseScript:
 	writetext GoldenrodGameCornerPrizeVendorConfirmPrizeText
@@ -154,18 +154,15 @@ GoldenrodGameCornerTMVendor_FinishScript:
 	playsound SFX_TRANSACTION
 	writetext GoldenrodGameCornerPrizeVendorHereYouGoText
 	waitbutton
-	jump GoldenrodGameCornerTMVendor_LoopScript
+	sjump GoldenrodGameCornerTMVendor_LoopScript
 
 GoldenrodGameCornerPrizeVendor_AlreadyHaveTMScript:
 	writetext GoldenrodGameCornerPrizeVendorAlreadyHaveTMText
 	waitbutton
-	jump GoldenrodGameCornerTMVendor_LoopScript
+	sjump GoldenrodGameCornerTMVendor_LoopScript
 
 GoldenrodGameCornerPrizeVendor_NotEnoughCoinsScript:
 	jumpopenedtext GoldenrodGameCornerPrizeVendorNeedMoreCoinsText
-
-GoldenrodGameCornerPrizeMonVendor_NoRoomForPrizeScript:
-	jumpopenedtext GoldenrodGameCornerPrizeVendorNoMoreRoomText
 
 GoldenrodGameCornerTMVendorMenuData:
 	db $40 ; flags
@@ -203,56 +200,53 @@ GoldenrodGameCornerPrizeMonVendorScript:
 .abra
 	checkcoins 200
 	ifequal $2, GoldenrodGameCornerPrizeVendor_NotEnoughCoinsScript
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, GoldenrodGameCornerPrizeMonVendor_NoRoomForPrizeScript
-	pokenamemem ABRA, $0
+	getmonname ABRA, $0
 	scall GoldenrodGameCornerPrizeVendor_ConfirmPurchaseScript
 	iffalse_jumpopenedtext GoldenrodGameCornerPrizeVendorQuitText
 	waitsfx
 	playsound SFX_TRANSACTION
 	writetext GoldenrodGameCornerPrizeVendorHereYouGoText
 	waitbutton
-	writebyte ABRA
-	special Special_GameCornerPrizeMonCheckDex
 	givepoke ABRA, 5
+	iffalse_jumpopenedtext GoldenrodGameCornerPrizeVendorNoMoreRoomText
+	setval ABRA
+	special Special_GameCornerPrizeMonCheckDex
 	takecoins 200
-	jump .loop
+	sjump .loop
 
 .cubone
 	checkcoins 800
 	ifequal $2, GoldenrodGameCornerPrizeVendor_NotEnoughCoinsScript
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, GoldenrodGameCornerPrizeMonVendor_NoRoomForPrizeScript
-	pokenamemem CUBONE, $0
+	getmonname CUBONE, $0
 	scall GoldenrodGameCornerPrizeVendor_ConfirmPurchaseScript
 	iffalse_jumpopenedtext GoldenrodGameCornerPrizeVendorQuitText
 	waitsfx
 	playsound SFX_TRANSACTION
 	writetext GoldenrodGameCornerPrizeVendorHereYouGoText
 	waitbutton
-	writebyte CUBONE
-	special Special_GameCornerPrizeMonCheckDex
 	givepoke CUBONE, 10
+	iffalse_jumpopenedtext GoldenrodGameCornerPrizeVendorNoMoreRoomText
+	setval CUBONE
+	special Special_GameCornerPrizeMonCheckDex
 	takecoins 800
-	jump .loop
+	sjump .loop
 
 .clefairy
 	checkcoins 1500
 	ifequal $2, GoldenrodGameCornerPrizeVendor_NotEnoughCoinsScript
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, GoldenrodGameCornerPrizeMonVendor_NoRoomForPrizeScript
-	pokenamemem CLEFAIRY, $0
+	getmonname CLEFAIRY, $0
 	scall GoldenrodGameCornerPrizeVendor_ConfirmPurchaseScript
 	iffalse_jumpopenedtext GoldenrodGameCornerPrizeVendorQuitText
 	waitsfx
 	playsound SFX_TRANSACTION
 	writetext GoldenrodGameCornerPrizeVendorHereYouGoText
 	waitbutton
-	writebyte CLEFAIRY
-	special Special_GameCornerPrizeMonCheckDex
 	givepoke CLEFAIRY, 15
+	iffalse_jumpopenedtext GoldenrodGameCornerPrizeVendorNoMoreRoomText
+	setval CLEFAIRY
+	special Special_GameCornerPrizeMonCheckDex
 	takecoins 1500
-	jump .loop
+	sjump .loop
 
 .MenuDataHeader:
 	db $40 ; flags
@@ -301,13 +295,13 @@ GoldenrodGameCornerSlotsMachineScript:
 	random 6
 	ifequal 0, GoldenrodGameCornerLuckySlotsMachineScript
 	refreshscreen
-	writebyte FALSE
+	setval FALSE
 	special Special_SlotMachine
 	endtext
 
 GoldenrodGameCornerLuckySlotsMachineScript:
 	refreshscreen
-	writebyte TRUE
+	setval TRUE
 	special Special_SlotMachine
 	endtext
 
@@ -330,7 +324,7 @@ GoldenrodGameCornerPrizeVendorWhichPrizeText:
 	done
 
 GoldenrodGameCornerPrizeVendorConfirmPrizeText:
-	text_from_ram wStringBuffer3
+	text_ram wStringBuffer3
 	text "."
 	line "Is that right?"
 	done
@@ -350,8 +344,12 @@ GoldenrodGameCornerPrizeVendorNeedMoreCoinsText:
 	done
 
 GoldenrodGameCornerPrizeVendorNoMoreRoomText:
-	text "Sorry. You can't"
-	line "carry any more."
+	text "Oh, no. You can't"
+	line "carry any more and"
+	cont "your box is full."
+
+	para "I'll return your"
+	line "coins to you."
 	done
 
 GoldenrodGameCornerPrizeVendorQuitText:

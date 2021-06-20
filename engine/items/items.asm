@@ -1,6 +1,6 @@
 _ReceiveItem::
 	call DoesHLEqualNumItems
-	jp nz, PutItemInPocket
+	jmp nz, PutItemInPocket
 	push hl
 	call CheckItemPocket
 	pop de
@@ -18,19 +18,19 @@ _ReceiveItem::
 
 .Item:
 	ld hl, wNumItems
-	jp PutItemInPocket
+	jmp PutItemInPocket
 
 .Medicine:
 	ld hl, wNumMedicine
-	jp PutItemInPocket
+	jmp PutItemInPocket
 
 .Ball:
 	ld hl, wNumBalls
-	jp PutItemInPocket
+	jmp PutItemInPocket
 
 .Berry:
 	ld hl, wNumBerries
-	jp PutItemInPocket
+	jmp PutItemInPocket
 
 _TossItem::
 	call DoesHLEqualNumItems
@@ -52,21 +52,21 @@ _TossItem::
 
 .Medicine:
 	ld hl, wNumMedicine
-	jp RemoveItemFromPocket
+	jmp RemoveItemFromPocket
 
 .Ball:
 	ld hl, wNumBalls
-	jp RemoveItemFromPocket
+	jmp RemoveItemFromPocket
 
 .Berry:
 	ld hl, wNumBerries
-	jp RemoveItemFromPocket
+	jmp RemoveItemFromPocket
 
 .Item:
 	ld h, d
 	ld l, e
 .remove
-	jp RemoveItemFromPocket
+	jmp RemoveItemFromPocket
 
 _CheckItem::
 	call DoesHLEqualNumItems
@@ -88,21 +88,21 @@ _CheckItem::
 
 .Medicine:
 	ld hl, wNumMedicine
-	jp CheckTheItem
+	jmp CheckTheItem
 
 .Ball:
 	ld hl, wNumBalls
-	jp CheckTheItem
+	jmp CheckTheItem
 
 .Berry:
 	ld hl, wNumBerries
-	jp CheckTheItem
+	jmp CheckTheItem
 
 .Item:
 	ld h, d
 	ld l, e
 .nope
-	jp CheckTheItem
+	jmp CheckTheItem
 
 DoesHLEqualNumItems:
 	ld a, l
@@ -385,7 +385,7 @@ GetItemAttr:
 	ld a, [wCurItem]
 	dec a
 	ld c, a
-	ld a, NUM_ITEMATTRS
+	ld a, ITEMATTR_STRUCT_LENGTH
 	rst AddNTimes
 	ld a, BANK(ItemAttributes)
 	call GetFarByte
@@ -409,7 +409,7 @@ GetKeyItemAttr:
 	ld a, [wCurKeyItem]
 	dec a
 	ld c, a
-	ld a, NUM_KEYITEMATTRS
+	ld a, KEYITEMATTR_STRUCT_LENGTH
 	rst AddNTimes
 	ld a, BANK(KeyItemAttributes)
 	call GetFarByte

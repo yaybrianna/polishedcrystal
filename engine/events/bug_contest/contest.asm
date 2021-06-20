@@ -1,4 +1,3 @@
-
 ContestDropOffMons:
 	ld hl, wPartyMon1HP
 	ld a, [hli]
@@ -45,16 +44,16 @@ ContestReturnMons:
 Special_GiveParkBalls:
 	xor a
 	ld [wContestMon], a
-	ld a, 20
+	ld a, BUG_CONTEST_BALLS
 	ld [wParkBallsRemaining], a
-	jp StartBugContestTimer
+	jmp StartBugContestTimer
 
 BugCatchingContestBattleScript::
-	writecode VAR_BATTLETYPE, BATTLETYPE_CONTEST
+	loadvar VAR_BATTLETYPE, BATTLETYPE_CONTEST
 	randomwildmon
 	startbattle
 	reloadmapafterbattle
-	copybytetovar wParkBallsRemaining
+	readmem wParkBallsRemaining
 	iffalse .OutOfBalls
 	end
 
@@ -63,7 +62,7 @@ BugCatchingContestBattleScript::
 	opentext
 	farwritetext _BugCatchingContestIsOverText
 	waitbutton
-	jump BugCatchingContestReturnToGateScript
+	sjump BugCatchingContestReturnToGateScript
 
 BugCatchingContestOverScript::
 	playsound SFX_ELEVATOR_END
@@ -89,29 +88,29 @@ _BugContestJudging:
 	ld a, [wBugContestThirdPlacePersonID]
 	call LoadContestantName
 	ld a, [wBugContestThirdPlaceMon]
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetPokemonName
 	ld hl, BugContest_ThirdPlaceText
 	call PrintText
 	ld a, [wBugContestSecondPlacePersonID]
 	call LoadContestantName
 	ld a, [wBugContestSecondPlaceMon]
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetPokemonName
 	ld hl, BugContest_SecondPlaceText
 	call PrintText
 	ld a, [wBugContestFirstPlacePersonID]
 	call LoadContestantName
 	ld a, [wBugContestFirstPlaceMon]
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetPokemonName
 	ld hl, BugContest_FirstPlaceText
 	call PrintText
-	jp BugContest_GetPlayersResult
+	jmp BugContest_GetPlayersResult
 
 BugContest_FirstPlaceText:
-	text_jump ContestJudging_FirstPlaceText
-	start_asm
+	text_far ContestJudging_FirstPlaceText
+	text_asm
 	ld de, SFX_1ST_PLACE
 	call PlaySFX
 	call WaitSFX
@@ -120,13 +119,13 @@ BugContest_FirstPlaceText:
 
 BugContest_FirstPlaceScoreText:
 	; The winning score was @  points!
-	text_jump ContestJudging_FirstPlaceScoreText
+	text_far ContestJudging_FirstPlaceScoreText
 	text_end
 
 BugContest_SecondPlaceText:
 	; Placing second was @ , who caught a @ !@ @
-	text_jump ContestJudging_SecondPlaceText
-	start_asm
+	text_far ContestJudging_SecondPlaceText
+	text_asm
 	ld de, SFX_2ND_PLACE
 	call PlaySFX
 	call WaitSFX
@@ -135,13 +134,13 @@ BugContest_SecondPlaceText:
 
 BugContest_SecondPlaceScoreText:
 	; The score was @  points!
-	text_jump ContestJudging_SecondPlaceScoreText
+	text_far ContestJudging_SecondPlaceScoreText
 	text_end
 
 BugContest_ThirdPlaceText:
 	; Placing third was @ , who caught a @ !@ @
-	text_jump ContestJudging_ThirdPlaceText
-	start_asm
+	text_far ContestJudging_ThirdPlaceText
+	text_asm
 	ld de, SFX_3RD_PLACE
 	call PlaySFX
 	call WaitSFX
@@ -150,7 +149,7 @@ BugContest_ThirdPlaceText:
 
 BugContest_ThirdPlaceScoreText:
 	; The score was @  points!
-	text_jump ContestJudging_ThirdPlaceScoreText
+	text_far ContestJudging_ThirdPlaceScoreText
 	text_end
 
 LoadContestantName:
@@ -185,8 +184,8 @@ LoadContestantName:
 	cp "@"
 	jr nz, .next
 	dec hl
-	ld [hl], " "
-	inc hl
+	ld a, " "
+	ld [hli], a
 	ld d, h
 	ld e, l
 ; Restore the Trainer Class ID and Trainer ID pointer.  Save de for later.
@@ -226,6 +225,16 @@ BugContest_GetPlayersResult:
 	jr nz, .loop
 	ret
 
+ClearContestResults:
+	ld hl, wBugContestResults
+	ld b, wBugContestWinnersEnd - wBugContestResults
+	xor a
+.loop
+	ld [hli], a
+	dec b
+	jr nz, .loop
+	ret
+
 BugContest_JudgeContestants:
 	call ClearContestResults
 	call ComputeAIContestantScores
@@ -238,17 +247,7 @@ BugContest_JudgeContestants:
 	ld [hli], a
 	ldh a, [hProduct + 1]
 	ld [hl], a
-	jp DetermineContestWinners
-
-ClearContestResults:
-	ld hl, wBugContestResults
-	ld b, wBugContestWinnersEnd - wBugContestResults
-	xor a
-.loop
-	ld [hli], a
-	dec b
-	jr nz, .loop
-	ret
+	; fallthrough
 
 DetermineContestWinners:
 	ld de, wBugContestTempScore
@@ -544,6 +543,6 @@ Special_CheckBugContestContestantFlag:
 	inc hl
 	ld d, [hl]
 	ld b, CHECK_FLAG
-	jp EventFlagAction
+	jmp EventFlagAction
 
 INCLUDE "data/events/bug_contest_flags.asm"

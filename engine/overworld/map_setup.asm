@@ -10,7 +10,7 @@ RunMapSetupScript::
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-	jp ReadMapSetupScript
+	jmp ReadMapSetupScript
 
 INCLUDE "data/maps/setup_scripts.asm"
 
@@ -158,11 +158,9 @@ CheckUpdatePlayerSprite:
 	call .CheckSurfing
 	jr c, .ok
 	call .CheckSurfing2
-	jr c, .ok
-	ret
-
+	ret nc
 .ok
-	jp UpdatePlayerSprite
+	jmp UpdatePlayerSprite
 
 .CheckBiking:
 	and a
@@ -223,7 +221,7 @@ CheckUpdatePlayerSprite:
 
 FadeOutMapMusic:
 	ld a, 6
-	jp SkipMusic
+	jmp SkipMusic
 
 ApplyMapPalettes:
 	farjp _UpdateTimePals
@@ -243,23 +241,30 @@ ForceMapMusic:
 	ld a, $88
 	ld [wMusicFade], a
 .notbiking
-	jp TryRestartMapMusic
+	jmp TryRestartMapMusic
 
 DecompressMetatiles:
 	call TilesetUnchanged
-	ret z
+	jr z, .done
 
-	; Decompressed RAM is all at $d000
+	assert wDecompressedMetatiles == WRAM1_Begin
 	ld hl, wTilesetBlocksBank
 	ld c, BANK(wDecompressedMetatiles)
 	call .Decompress
 
+	assert wDecompressedAttributes == WRAM1_Begin
 	ld hl, wTilesetAttributesBank
 	ld c, BANK(wDecompressedAttributes)
 	call .Decompress
 
+	assert wDecompressedCollisions == WRAM1_Begin
 	ld hl, wTilesetCollisionBank
 	ld c, BANK(wDecompressedCollisions)
+	call .Decompress
+
+.done
+	ld a, MAPCALLBACK_BLOCKS
+	jmp RunMapCallback
 
 .Decompress:
 	ld a, [hli]
@@ -267,9 +272,8 @@ DecompressMetatiles:
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
-	ld de, wDecompressedMetatiles
 	ld a, c
 	call StackCallInWRAMBankA
 
 .FunctionD000
-	jp FarDecompressAtB_D000
+	jmp FarDecompressInB

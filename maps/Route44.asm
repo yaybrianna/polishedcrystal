@@ -66,7 +66,7 @@ Route44VeteranmScript:
 .Beaten:
 	opentext
 	writetext .AfterText1
-	buttonsound
+	promptbutton
 	verbosegiveitem ROCKY_HELMET
 	iffalse_endtext
 	setevent EVENT_GOT_ROCKY_HELMET_FROM_ROUTE_44_LEADER
@@ -142,34 +142,34 @@ TrainerBird_keeperVance1:
 	trainer BIRD_KEEPER, VANCE1, EVENT_BEAT_BIRD_KEEPER_VANCE, Bird_keeperVance1SeenText, Bird_keeperVance1BeatenText, 0, Bird_keeperVance1Script
 
 Bird_keeperVance1Script:
-	writecode VAR_CALLERID, PHONE_BIRDKEEPER_VANCE
+	loadvar VAR_CALLERID, PHONE_BIRDKEEPER_VANCE
 	opentext
-	checkflag ENGINE_VANCE
-	iftrue UnknownScript_0x19d86a
+	checkflag ENGINE_VANCE_READY_FOR_REMATCH
+	iftrue .WantsBattle
 	checkcellnum PHONE_BIRDKEEPER_VANCE
 	iftrue Route44NumberAcceptedM
 	checkevent EVENT_VANCE_ASKED_FOR_PHONE_NUMBER
-	iftrue UnknownScript_0x19d853
+	iftrue .AskedAlready
 	writetext BirdKeeperVanceLegendaryBirdsText
-	buttonsound
+	promptbutton
 	setevent EVENT_VANCE_ASKED_FOR_PHONE_NUMBER
 	scall Route44AskNumber1M
-	jump UnknownScript_0x19d856
+	sjump .AskForNumber
 
-UnknownScript_0x19d853:
+.AskedAlready:
 	scall Route44AskNumber2M
-UnknownScript_0x19d856:
+.AskForNumber:
 	askforphonenumber PHONE_BIRDKEEPER_VANCE
 	ifequal $1, Route44PhoneFullM
 	ifequal $2, Route44NumberDeclinedM
-	trainertotext BIRD_KEEPER, VANCE1, $0
+	gettrainername BIRD_KEEPER, VANCE1, $0
 	scall Route44RegisteredNumberM
-	jump Route44NumberAcceptedM
+	sjump Route44NumberAcceptedM
 
-UnknownScript_0x19d86a:
+.WantsBattle:
 	scall Route44RematchM
 	winlosstext Bird_keeperVance1BeatenText, 0
-	copybytetovar wVanceFightCount
+	readmem wVanceFightCount
 	ifequal 2, .Fight2
 	ifequal 1, .Fight1
 	ifequal 0, .LoadFight0
@@ -183,37 +183,37 @@ UnknownScript_0x19d86a:
 	loadtrainer BIRD_KEEPER, VANCE1
 	startbattle
 	reloadmapafterbattle
-	loadvar wVanceFightCount, 1
-	clearflag ENGINE_VANCE
+	loadmem wVanceFightCount, 1
+	clearflag ENGINE_VANCE_READY_FOR_REMATCH
 	end
 
 .LoadFight1:
 	loadtrainer BIRD_KEEPER, VANCE2
 	startbattle
 	reloadmapafterbattle
-	loadvar wVanceFightCount, 2
-	clearflag ENGINE_VANCE
+	loadmem wVanceFightCount, 2
+	clearflag ENGINE_VANCE_READY_FOR_REMATCH
 	end
 
 .LoadFight2:
 	loadtrainer BIRD_KEEPER, VANCE3
 	startbattle
 	reloadmapafterbattle
-	clearflag ENGINE_VANCE
+	clearflag ENGINE_VANCE_READY_FOR_REMATCH
 	checkevent EVENT_VANCE_CARBOS
-	iftrue UnknownScript_0x19d8cb
+	iftrue .Carbos
 	checkevent EVENT_GOT_CARBOS_FROM_VANCE
-	iftrue UnknownScript_0x19d8ca
+	iftrue .ReceivedCarbosBefore
 	scall Route44RematchGiftM
 	verbosegiveitem CARBOS
 	iffalse VancePackFull
 	setevent EVENT_GOT_CARBOS_FROM_VANCE
-	jump Route44NumberAcceptedM
+	sjump Route44NumberAcceptedM
 
-UnknownScript_0x19d8ca:
+.ReceivedCarbosBefore:
 	end
 
-UnknownScript_0x19d8cb:
+.Carbos:
 	opentext
 	writetext BirdKeeperVance2BeatenText
 	waitbutton
@@ -221,7 +221,7 @@ UnknownScript_0x19d8cb:
 	iffalse VancePackFull
 	clearevent EVENT_VANCE_CARBOS
 	setevent EVENT_GOT_CARBOS_FROM_VANCE
-	jump Route44NumberAcceptedM
+	sjump Route44NumberAcceptedM
 
 Route44AskNumber1M:
 	jumpstd asknumber1m
@@ -270,42 +270,42 @@ TrainerFisherWilton1:
 	trainer FISHER, WILTON1, EVENT_BEAT_FISHER_WILTON, FisherWilton1SeenText, FisherWilton1BeatenText, 0, FisherWilton1Script
 
 FisherWilton1Script:
-	writecode VAR_CALLERID, PHONE_FISHER_WILTON
+	loadvar VAR_CALLERID, PHONE_FISHER_WILTON
 	opentext
-	checkflag ENGINE_WILTON
-	iftrue UnknownScript_0x19d96e
+	checkflag ENGINE_WILTON_READY_FOR_REMATCH
+	iftrue .WantsBattle
 	checkflag ENGINE_WILTON_HAS_ITEM
-	iftrue UnknownScript_0x19d9b4
+	iftrue .HasItem
 	checkcellnum PHONE_FISHER_WILTON
 	iftrue Route44NumberAcceptedM
 	checkevent EVENT_WILTON_ASKED_FOR_PHONE_NUMBER
-	iftrue UnknownScript_0x19d957
+	iftrue .AskedAlready
 	checkunits
 	iftrue .metric
-	writetext UnknownText_0x19daa8_Imperial
-	jump .ok
+	writetext FisherWiltonHugePoliwagText_Imperial
+	sjump .ok
 .metric
-	writetext UnknownText_0x19daa8_Metric
+	writetext FisherWiltonHugePoliwagText_Metric
 .ok
-	buttonsound
+	promptbutton
 	setevent EVENT_WILTON_ASKED_FOR_PHONE_NUMBER
 	scall Route44AskNumber1M
-	jump UnknownScript_0x19d95a
+	sjump .AskForNumber
 
-UnknownScript_0x19d957:
+.AskedAlready:
 	scall Route44AskNumber2M
-UnknownScript_0x19d95a:
+.AskForNumber:
 	askforphonenumber PHONE_FISHER_WILTON
 	ifequal $1, Route44PhoneFullM
 	ifequal $2, Route44NumberDeclinedM
-	trainertotext FISHER, WILTON1, $0
+	gettrainername FISHER, WILTON1, $0
 	scall Route44RegisteredNumberM
-	jump Route44NumberAcceptedM
+	sjump Route44NumberAcceptedM
 
-UnknownScript_0x19d96e:
+.WantsBattle:
 	scall Route44RematchM
 	winlosstext FisherWilton1BeatenText, 0
-	copybytetovar wWiltonFightCount
+	readmem wWiltonFightCount
 	ifequal 2, .Fight2
 	ifequal 1, .Fight1
 	ifequal 0, .LoadFight0
@@ -319,52 +319,52 @@ UnknownScript_0x19d96e:
 	loadtrainer FISHER, WILTON1
 	startbattle
 	reloadmapafterbattle
-	loadvar wWiltonFightCount, 1
-	clearflag ENGINE_WILTON
+	loadmem wWiltonFightCount, 1
+	clearflag ENGINE_WILTON_READY_FOR_REMATCH
 	end
 
 .LoadFight1:
 	loadtrainer FISHER, WILTON2
 	startbattle
 	reloadmapafterbattle
-	loadvar wWiltonFightCount, 2
-	clearflag ENGINE_WILTON
+	loadmem wWiltonFightCount, 2
+	clearflag ENGINE_WILTON_READY_FOR_REMATCH
 	end
 
 .LoadFight2:
 	loadtrainer FISHER, WILTON3
 	startbattle
 	reloadmapafterbattle
-	clearflag ENGINE_WILTON
+	clearflag ENGINE_WILTON_READY_FOR_REMATCH
 	end
 
-UnknownScript_0x19d9b4:
+.HasItem:
 	scall Route44GiftM
 	checkevent EVENT_WILTON_HAS_ULTRA_BALL
-	iftrue UnknownScript_0x19d9c9
+	iftrue .UltraBall
 	checkevent EVENT_WILTON_HAS_GREAT_BALL
-	iftrue UnknownScript_0x19d9d2
+	iftrue .GreatBall
 	checkevent EVENT_WILTON_HAS_POKE_BALL
-	iftrue UnknownScript_0x19d9db
-UnknownScript_0x19d9c9:
+	iftrue .PokeBall
+.UltraBall:
 	verbosegiveitem ULTRA_BALL
-	iffalse UnknownScript_0x19d9e7
-	jump UnknownScript_0x19d9e1
+	iffalse .Route44PackFullM
+	sjump .ItemReceived
 
-UnknownScript_0x19d9d2:
+.GreatBall:
 	verbosegiveitem GREAT_BALL
-	iffalse UnknownScript_0x19d9e7
-	jump UnknownScript_0x19d9e1
+	iffalse .Route44PackFullM
+	sjump .ItemReceived
 
-UnknownScript_0x19d9db:
+.PokeBall:
 	verbosegiveitem POKE_BALL
-	iffalse UnknownScript_0x19d9e7
-UnknownScript_0x19d9e1:
+	iffalse .Route44PackFullM
+.ItemReceived:
 	clearflag ENGINE_WILTON_HAS_ITEM
-	jump Route44NumberAcceptedM
+	sjump Route44NumberAcceptedM
 
-UnknownScript_0x19d9e7:
-	jump Route44PackFullM
+.Route44PackFullM:
+	sjump Route44PackFullM
 
 GenericTrainerFisherEdgar:
 	generictrainer FISHER, EDGAR, EVENT_BEAT_FISHER_EDGAR, FisherEdgarSeenText, FisherEdgarBeatenText
@@ -433,7 +433,7 @@ FisherWilton1BeatenText:
 	line "it."
 	done
 
-UnknownText_0x19daa8_Imperial:
+FisherWiltonHugePoliwagText_Imperial:
 	text "That Poliwag that"
 	line "got away…"
 	cont "It was huge."
@@ -442,7 +442,7 @@ UnknownText_0x19daa8_Imperial:
 	line "been 16 feet long!"
 	done
 
-UnknownText_0x19daa8_Metric:
+FisherWiltonHugePoliwagText_Metric:
 	text "That Poliwag that"
 	line "got away…"
 	cont "It was huge."

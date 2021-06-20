@@ -1,19 +1,19 @@
 Kurt_PrintTextWhichApricorn:
 	ld hl, .Text
-	jp PrintText
+	jmp PrintText
 
 .Text:
 	; Which APRICORN should I use?
-	text_jump _WhichApricornText
+	text_far _WhichApricornText
 	text_end
 
 Kurt_PrintTextHowMany:
 	ld hl, .Text
-	jp PrintText
+	jmp PrintText
 
 .Text:
 	; How many should I make?
-	text_jump _HowManyShouldIMakeText
+	text_far _HowManyShouldIMakeText
 	text_end
 
 Special_SelectApricornForKurt:
@@ -46,7 +46,7 @@ Special_SelectApricornForKurt:
 	call Kurt_GiveUpSelectedQuantityOfSelectedApricorn
 
 .done
-	jp ExitMenu
+	jmp ExitMenu
 
 Kurt_SelectApricorn:
 	call Kurt_FindApricornsInBag
@@ -97,7 +97,7 @@ Kurt_SelectApricorn:
 	and a
 	ret z
 	push de
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetApricornName
 	pop hl
 	rst PlaceString
@@ -145,7 +145,7 @@ Kurt_SelectQuantity:
 	scf
 
 .done
-	jp CloseWindow
+	jmp CloseWindow
 
 .MenuDataHeader:
 	db $40 ; flags
@@ -157,7 +157,7 @@ Kurt_SelectQuantity:
 	ld de, SCREEN_WIDTH + 1
 	add hl, de
 	ld a, [wCurItem]
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetApricornName
 	rst PlaceString
 	ret
@@ -166,11 +166,11 @@ Kurt_SelectQuantity:
 	call MenuBoxCoord2Tile
 	ld de, 2 * SCREEN_WIDTH + 10
 	add hl, de
-	ld [hl], "×"
-	inc hl
+	ld a, "×"
+	ld [hli], a
 	ld de, wItemQuantityChangeBuffer
 	lb bc, PRINTNUM_LEADINGZEROS | 1, 2
-	jp PrintNum
+	jmp PrintNum
 
 Kurt_GetQuantityOfApricorn:
 	push bc

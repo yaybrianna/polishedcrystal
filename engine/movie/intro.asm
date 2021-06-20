@@ -21,7 +21,7 @@ CrystalIntro:
 	call IntroSceneJumper
 	farcall PlaySpriteAnimations
 	call DelayFrame
-	jp .loop
+	jr .loop
 
 .ShutOffMusic:
 	ld de, MUSIC_NONE
@@ -145,7 +145,7 @@ IntroScene1:
 	xor a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jr NextIntroScene
 
 IntroScene2:
 ; First Unown (A) fades in, pulses, then fades out.
@@ -153,7 +153,7 @@ IntroScene2:
 	ld a, [hl]
 	inc [hl]
 	cp $80
-	jp nc, NextIntroScene
+	jr nc, NextIntroScene
 	cp $60
 	jr nz, .DontPlaySound
 	push af
@@ -165,7 +165,7 @@ IntroScene2:
 .DontPlaySound:
 	ld [wIntroSceneTimer], a
 	xor a
-	jp CrystalIntro_UnownFade
+	jmp CrystalIntro_UnownFade
 
 IntroScene3:
 ; More setup. Transition to the outdoor scene.
@@ -186,7 +186,7 @@ IntroScene3:
 	call Intro_SetCGBPalUpdate
 	xor a
 	ld [wIntroSceneFrameCounter], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene4:
 ; Scroll the outdoor panorama for a bit.
@@ -194,7 +194,7 @@ IntroScene4:
 	ld hl, wIntroSceneFrameCounter
 	ld a, [hl]
 	cp $80
-	jp z, NextIntroScene
+	jmp z, NextIntroScene
 	inc [hl]
 	ret
 
@@ -248,7 +248,7 @@ IntroScene5:
 	xor a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene6:
 ; Two more Unown (I, H) fade in.
@@ -256,7 +256,7 @@ IntroScene6:
 	ld a, [hl]
 	inc [hl]
 	cp $80
-	jp nc, NextIntroScene
+	jmp nc, NextIntroScene
 	cp $60
 	jr z, .SecondUnown
 	cp $40
@@ -274,7 +274,7 @@ IntroScene6:
 .NoUnown:
 	ld [wIntroSceneTimer], a
 	xor a
-	jp CrystalIntro_UnownFade
+	jmp CrystalIntro_UnownFade
 
 .SecondUnown:
 	push af
@@ -286,7 +286,7 @@ IntroScene6:
 .StopUnown:
 	ld [wIntroSceneTimer], a
 	ld a, $1
-	jp CrystalIntro_UnownFade
+	jmp CrystalIntro_UnownFade
 
 IntroScene7:
 ; Back to the outdoor scene.
@@ -325,7 +325,7 @@ IntroScene7:
 	xor a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene8:
 ; Scroll the scene, then show Suicune running across the screen.
@@ -335,7 +335,7 @@ IntroScene8:
 	cp $40
 	jr z, .suicune_sound
 	jr nc, .animate_suicune
-	jp Intro_PerspectiveScrollBG
+	jmp Intro_PerspectiveScrollBG
 
 .suicune_sound
 	ld de, SFX_INTRO_SUICUNE_3
@@ -352,7 +352,7 @@ IntroScene8:
 	ld de, SFX_INTRO_SUICUNE_2
 	call PlaySFX
 	farcall DeinitializeAllSprites
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene9:
 ; Set up the next scene (same bg).
@@ -388,7 +388,7 @@ IntroScene9:
 	ld [wGlobalAnimXOffset], a
 	xor a
 	ld [wIntroSceneFrameCounter], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene10:
 ; Wooper and Pichu enter.
@@ -397,14 +397,12 @@ IntroScene10:
 	ld a, [hl]
 	inc [hl]
 	cp $c0
-	jp z, NextIntroScene
+	jmp z, NextIntroScene
 	cp $20
 	jr z, .wooper
 	cp $40
-	jr z, .pichu
-	ret
-
-.pichu
+	ret nz
+; pichu
 	depixel 21, 16, 1, 0
 	ld a, SPRITE_ANIM_INDEX_INTRO_PICHU
 	jr .got_anim
@@ -415,7 +413,7 @@ IntroScene10:
 .got_anim
 	call _InitSpriteAnimStruct
 	ld de, SFX_INTRO_PICHU
-	jp PlaySFX
+	jmp PlaySFX
 
 IntroScene11:
 ; Back to Unown again.
@@ -464,7 +462,7 @@ IntroScene11:
 	xor a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene12:
 ; Even more Unown.
@@ -473,7 +471,7 @@ IntroScene12:
 	ld a, [hl]
 	inc [hl]
 	cp $c0
-	jp nc, NextIntroScene
+	jmp nc, NextIntroScene
 	cp $80
 	jr nc, .second_half
 ; first half
@@ -485,7 +483,7 @@ IntroScene12:
 	and $e0
 	srl a
 	swap a
-	jp CrystalIntro_UnownFade
+	jmp CrystalIntro_UnownFade
 
 .second_half
 ; double speed
@@ -498,7 +496,7 @@ IntroScene12:
 	and $70
 	or $40
 	swap a
-	jp CrystalIntro_UnownFade
+	jmp CrystalIntro_UnownFade
 
 .PlayUnownSound:
 	ld a, [wIntroSceneFrameCounter]
@@ -520,7 +518,7 @@ IntroScene12:
 	push de
 	call SFXChannelsOff
 	pop de
-	jp PlaySFX
+	jmp PlaySFX
 
 .UnownSounds:
 	dbw $00, SFX_INTRO_UNOWN_3
@@ -563,7 +561,7 @@ IntroScene13:
 	xor a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene14:
 ; Suicune runs then jumps.
@@ -574,7 +572,7 @@ IntroScene14:
 	ld a, [hl]
 	inc [hl]
 	cp $80
-	jp z, NextIntroScene
+	jmp z, NextIntroScene
 	cp $60
 	jr z, .jump
 	jr nc, .asm_e4e1a
@@ -666,7 +664,7 @@ IntroScene15:
 	xor a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene16:
 ; Suicune shows its face. An Unown appears in front.
@@ -674,7 +672,7 @@ IntroScene16:
 	ld a, [hl]
 	inc [hl]
 	cp $80
-	jp nc, NextIntroScene
+	jmp nc, NextIntroScene
 	call Intro_Scene16_AnimateSuicune
 	ldh a, [hSCY]
 	and a
@@ -729,7 +727,7 @@ IntroScene17:
 	xor a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene18:
 ; Suicune close up.
@@ -737,7 +735,7 @@ IntroScene18:
 	ld a, [hl]
 	inc [hl]
 	cp $60
-	jp nc, NextIntroScene
+	jmp nc, NextIntroScene
 	ldh a, [hSCX]
 	cp $60
 	ret z
@@ -807,7 +805,7 @@ IntroScene19:
 	xor a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene20:
 ; Suicune running away. A bunch of Unown appear.
@@ -815,7 +813,7 @@ IntroScene20:
 	ld a, [hl]
 	inc [hl]
 	cp $98
-	jp nc, NextIntroScene
+	jmp nc, NextIntroScene
 	cp $58
 	ret nc
 	cp $40
@@ -838,7 +836,7 @@ IntroScene20:
 	srl a
 	srl a
 	ld [wIntroSceneTimer], a
-	jp Intro_Scene20_AppearUnown
+	jmp Intro_Scene20_AppearUnown
 
 IntroScene21:
 ; Suicune gets more distant and turns black.
@@ -849,23 +847,21 @@ IntroScene21:
 	ldh [hBGMapMode], a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene22:
 	ld hl, wIntroSceneFrameCounter
 	ld a, [hl]
 	inc [hl]
 	cp $8
-	jr nc, .done
-	ret
-.done
+	ret c
 	farcall DeinitializeAllSprites
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene23:
 	xor a
 	ld [wIntroSceneFrameCounter], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene24:
 ; Fade to white.
@@ -882,18 +878,18 @@ IntroScene24:
 	ld a, c
 	and $1c
 	sla a
-	jp Intro_Scene24_ApplyPaletteFade
+	jmp Intro_Scene24_ApplyPaletteFade
 
 .done
 	ld a, $40
 	ld [wIntroSceneFrameCounter], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene25:
 ; Wait around a bit.
 	ld a, [wIntroSceneFrameCounter]
 	dec a
-	jp z, NextIntroScene
+	jmp z, NextIntroScene
 	ld [wIntroSceneFrameCounter], a
 	ret
 
@@ -943,7 +939,7 @@ IntroScene26:
 	xor a
 	ld [wIntroSceneFrameCounter], a
 	ld [wIntroSceneTimer], a
-	jp NextIntroScene
+	jmp NextIntroScene
 
 IntroScene27:
 ; Spell out C R Y S T A L with Unown.
@@ -961,7 +957,7 @@ IntroScene27:
 	ld a, c
 	and $70
 	swap a
-	jp Intro_FadeUnownWordPals
+	jmp Intro_FadeUnownWordPals
 
 .done
 	call NextIntroScene
@@ -977,11 +973,11 @@ IntroScene28:
 	jr z, .done
 	dec [hl]
 	cp $30
-	jp z, ClearBGPalettes
+	jmp z, ClearBGPalettes
 	cp $10
 	ret nz
 	ld de, SFX_TITLE_SCREEN_INTRO
-	jp PlaySFX
+	jmp PlaySFX
 
 .done
 	ld hl, wJumptableIndex
@@ -1107,7 +1103,7 @@ CrystalIntro_InitUnownAnim:
 	push de
 	ld a, SPRITE_ANIM_INDEX_INTRO_UNOWN
 	call _InitSpriteAnimStruct
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	ld [hl], $8
 	ld a, SPRITE_ANIM_FRAMESET_INTRO_UNOWN_4
@@ -1117,7 +1113,7 @@ CrystalIntro_InitUnownAnim:
 	push de
 	ld a, SPRITE_ANIM_INDEX_INTRO_UNOWN
 	call _InitSpriteAnimStruct
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	ld [hl], $18
 	ld a, SPRITE_ANIM_FRAMESET_INTRO_UNOWN_3
@@ -1127,7 +1123,7 @@ CrystalIntro_InitUnownAnim:
 	push de
 	ld a, SPRITE_ANIM_INDEX_INTRO_UNOWN
 	call _InitSpriteAnimStruct
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	ld [hl], $28
 	ld a, SPRITE_ANIM_FRAMESET_INTRO_UNOWN_1
@@ -1136,11 +1132,11 @@ CrystalIntro_InitUnownAnim:
 
 	ld a, SPRITE_ANIM_INDEX_INTRO_UNOWN
 	call _InitSpriteAnimStruct
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	ld [hl], $38
 	ld a, SPRITE_ANIM_FRAMESET_INTRO_UNOWN_2
-	jp ReinitSpriteAnimFrame
+	jmp ReinitSpriteAnimFrame
 
 CrystalIntro_UnownFade:
 	add a
@@ -1234,10 +1230,8 @@ endc
 .BWFade:
 ; Fade between black and white.
 if !DEF(MONOCHROME)
-hue = 0
-rept 32
+for hue, 32
 	RGB hue, hue, hue
-hue = hue + 1
 endr
 else
 rept 8
@@ -1257,10 +1251,8 @@ endc
 .BlackLBlueFade:
 ; Fade between black and light blue.
 if !DEF(MONOCHROME)
-hue = 0
-rept 32
+for hue, 32
 	RGB 0, hue / 2, hue
-hue = hue + 1
 endr
 else
 rept 8
@@ -1280,10 +1272,8 @@ endc
 .BlackBlueFade:
 ; Fade between black and blue.
 if !DEF(MONOCHROME)
-hue = 0
-rept 32
+for hue, 32
 	RGB 0, 0, hue
-hue = hue + 1
 endr
 else
 rept 8
@@ -1405,12 +1395,9 @@ endr
 
 .FastFadePalettes:
 if !DEF(MONOCHROME)
-hue = 31
-rept 8
+for hue, 31, 9, -3
 	RGB hue, hue, hue
-hue = hue - 1
-	RGB hue, hue, hue
-hue = hue - 2
+	RGB hue - 1, hue - 1, hue - 1
 endr
 else
 rept 4
@@ -1429,10 +1416,8 @@ endc
 
 .SlowFadePalettes:
 if !DEF(MONOCHROME)
-hue = 31
-rept 16
+for hue, 31, 15, -1
 	RGB hue, hue, hue
-hue = hue - 1
 endr
 else
 rept 8
@@ -1485,10 +1470,7 @@ Intro_Scene16_AnimateSuicune:
 	and $3
 	jr z, Intro_ColoredSuicuneFrameSwap
 	cp $3
-	jr z, .PrepareForSuicuneSwap
-	ret
-
-.PrepareForSuicuneSwap:
+	ret nz
 	xor a
 	ldh [hBGMapMode], a
 	ret
@@ -1575,7 +1557,7 @@ endc
 	ld a, $1
 	ldh [hCGBPalUpdate], a
 	ld c, 64
-	jp DelayFrames
+	jmp DelayFrames
 
 Intro_DecompressRequest2bpp_64Tiles:
 	lb bc, 1, 64

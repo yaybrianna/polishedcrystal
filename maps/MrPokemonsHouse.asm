@@ -29,7 +29,7 @@ MrPokemonsHouse_MapScriptHeader:
 	const MRPOKEMONSHOUSE_POKEDEX
 
 MrPokemonsHouseTrigger0:
-	priorityjump .MrPokemonEvent
+	sdefer .MrPokemonEvent
 	end
 
 .MrPokemonEvent:
@@ -39,24 +39,24 @@ MrPokemonsHouseTrigger0:
 	applymovement PLAYER, MrPokemonsHouse_PlayerWalksToMrPokemon
 	opentext
 	writetext MrPokemonIntroText2
-	buttonsound
+	promptbutton
 	waitsfx
 	verbosegivekeyitem MYSTERY_EGG
 	setevent EVENT_GOT_MYSTERY_EGG_FROM_MR_POKEMON
 	blackoutmod CHERRYGROVE_CITY
 if !DEF(DEBUG)
 	writetext MrPokemonIntroText3
-	buttonsound
+	promptbutton
 	turnobject MRPOKEMONSHOUSE_GENTLEMAN, RIGHT
 	writetext MrPokemonIntroText4
-	buttonsound
+	promptbutton
 	turnobject MRPOKEMONSHOUSE_GENTLEMAN, DOWN
 	turnobject MRPOKEMONSHOUSE_OAK, LEFT
 	writetext MrPokemonIntroText5
 	waitbutton
 endc
 	closetext
-	jump MrPokemonsHouse_OakScript
+	sjump MrPokemonsHouse_OakScript
 
 MrPokemonsHouse_MrPokemonScript:
 	faceplayer
@@ -71,19 +71,23 @@ MrPokemonsHouse_MrPokemonScript:
 	writetext MrPokemonText_GimmeTheScale
 	yesorno
 	iffalse_jumpopenedtext MrPokemonText_Disappointed
-	checkcode VAR_PARTYCOUNT
-	ifequal PARTY_LENGTH, .party_full
 	special SpecialGiveShinyDitto
-	opentext
-	writetext MrPokemonText_GotShinyDittoEgg
+	iffalse_jumpopenedtext MrPokemonText_PartyAndBoxFull
+	writetext MrPokemonText_GotShinyDitto
 	playsound SFX_KEY_ITEM
 	waitsfx
+	ifequal 1, .in_party
+	special Special_CurBoxFullCheck
+	iffalse .BoxNotFull
+	farwritetext _CurBoxFullText
+.BoxNotFull
+	special GetCurBoxName
+	writetext MrPokemonText_SentToPC
+	promptbutton
+.in_party
 	takekeyitem RED_SCALE
 	setevent EVENT_TRADED_RED_SCALE
 	jumpopenedtext MrPokemonText_AlwaysNewDiscoveries
-
-.party_full
-	jumpopenedtext MrPokemonText_PartyFull
 
 MrPokemonsHouse_OakScript:
 	playmusic MUSIC_PROF_OAK
@@ -150,7 +154,7 @@ MrPokemonsHouse_CabinetScript:
 	writetext MrPokemonsHouse_CabinetText
 	checkevent EVENT_TRADED_RED_SCALE
 	iffalse .NoRedScale
-	buttonsound
+	promptbutton
 	writetext MrPokemonsHouse_RedScaleCabinetText
 .NoRedScale
 	waitbutton
@@ -356,14 +360,22 @@ MrPokemonText_GimmeTheScale:
 	line "a rare #mon."
 	done
 
-MrPokemonText_GotShinyDittoEgg:
+MrPokemonText_GotShinyDitto:
 	text "<PLAYER> received a"
 	line "#mon."
 	done
 
-MrPokemonText_PartyFull:
+MrPokemonText_SentToPC:
+	text "The #mon was"
+	line "sent to "
+	text_ram wStringBuffer1
+	text "."
+	done
+
+MrPokemonText_PartyAndBoxFull:
 	text "You don't have any"
-	line "room for this!"
+	line "room for this,"
+	cont "even in your box!"
 	done
 
 MrPokemonText_Disappointed:

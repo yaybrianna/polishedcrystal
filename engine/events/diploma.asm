@@ -45,12 +45,12 @@ _Diploma:
 	ld de, wGameTimeHours
 	lb bc, 2, 4
 	call PrintNum
-	ld [hl], ":"
-	inc hl
+	ld a, ":"
+	ld [hli], a
 	ld de, wGameTimeMinutes
 	lb bc, PRINTNUM_LEADINGZEROS | 1, 2
 	call PrintNum
-	jp WaitPressAorB_BlinkCursor
+	jmp WaitPressAorB_BlinkCursor
 
 .PlayerString:
 	db "Player@"

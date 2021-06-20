@@ -30,7 +30,7 @@ jpbutton: MACRO
 ; assumes hl == hJoyPressed
 	ld a, [hl]
 	and \1
-	jp nz, \2
+	jmp nz, \2
 ENDM
 
 jrheldbutton: MACRO
@@ -57,7 +57,7 @@ jpheldbutton: MACRO
 	jr z, .no\@
 	ld a, \3
 	ld [wTextDelayFrames], a
-	jp \2
+	jmp \2
 .no\@:
 ENDM
 
@@ -108,6 +108,11 @@ endc
 MusicPlayer::
 	call ClearTileMap
 
+	ld a, LOW(LCDMusicPlayer)
+	ldh [hFunctionTargetLo], a
+	ld a, HIGH(LCDMusicPlayer)
+	ldh [hFunctionTargetHi], a
+
 ; Load palette
 	ld hl, rIE
 	set LCD_STAT, [hl]
@@ -139,9 +144,9 @@ MusicPlayer::
 	hlcoord 8, 17, wAttrMap
 	ld [hl], $2
 	hlcoord 12, 17, wAttrMap
-	ld [hl], $1
-	inc hl
-	ld [hl], $1
+	ld a, $1
+	ld [hli], a
+	ld [hl], a
 
 	farcall ApplyAttrMapVBank0
 	ld a, $1
@@ -226,7 +231,7 @@ RenderMusicPlayer:
 
 	ld a, [wSongSelection]
 	; let's see if a song is currently selected
-	cp NUM_SONGS
+	cp NUM_MUSIC_SONGS
 	jr nc, .bad_selection
 	and a
 	jr nz, _RedrawMusicPlayer
@@ -266,38 +271,38 @@ MusicPlayerLoop:
 ; previous song
 	ld a, [wSongSelection]
 	dec a
-	jp nz, _RedrawMusicPlayer
-	ld a, NUM_SONGS - 1
-	jp _RedrawMusicPlayer
+	jmp nz, _RedrawMusicPlayer
+	ld a, NUM_MUSIC_SONGS - 1
+	jmp _RedrawMusicPlayer
 
 .right:
 ; next song
 	ld a, [wSongSelection]
 	inc a
-	cp NUM_SONGS
-	jp nz, _RedrawMusicPlayer
+	cp NUM_MUSIC_SONGS
+	jmp nz, _RedrawMusicPlayer
 	ld a, 1
-	jp _RedrawMusicPlayer
+	jmp _RedrawMusicPlayer
 
 .down:
 ; 10 songs back
 	ld a, [wSongSelection]
 	sub MP_LIST_PAGE_SKIP
 	jr z, .zerofix
-	cp NUM_SONGS
-	jp c, _RedrawMusicPlayer
+	cp NUM_MUSIC_SONGS
+	jmp c, _RedrawMusicPlayer
 .zerofix
-	ld a, NUM_SONGS - 1
-	jp _RedrawMusicPlayer
+	ld a, NUM_MUSIC_SONGS - 1
+	jmp _RedrawMusicPlayer
 
 .up:
 ; 10 songs ahead
 	ld a, [wSongSelection]
 	add MP_LIST_PAGE_SKIP
-	cp NUM_SONGS
-	jp c, _RedrawMusicPlayer
+	cp NUM_MUSIC_SONGS
+	jmp c, _RedrawMusicPlayer
 	ld a, 1
-	jp _RedrawMusicPlayer
+	jmp _RedrawMusicPlayer
 
 .a:
 ; restart playing song
@@ -315,7 +320,7 @@ MusicPlayerLoop:
 	ld [hli], a
 	ld [hli], a
 	ld [hl], a
-	jp MusicPlayerLoop
+	jmp MusicPlayerLoop
 
 .b:
 ; exit music player
@@ -329,6 +334,11 @@ MusicPlayerLoop:
 	res 2, [hl] ; 8x8 sprites
 	ld hl, rIE
 	res LCD_STAT, [hl]
+
+	ld a, LOW(LCDGeneric)
+	ldh [hFunctionTargetLo], a
+	ld a, HIGH(LCDGeneric)
+	ldh [hFunctionTargetHi], a
 	ret
 
 .start:
@@ -338,7 +348,7 @@ MusicPlayerLoop:
 	ldh a, [hMPBuffer]
 	ldh [rSVBK], a
 	call SongSelector
-	jp RenderMusicPlayer
+	jmp RenderMusicPlayer
 
 .select:
 	xor a
@@ -388,7 +398,7 @@ SongEditor:
 .no_overflow
 	ld [wChannelSelector], a
 	call DrawChannelSelector
-	jp SongEditor
+	jr SongEditor
 
 .a:
 ; for pitch: nothing
@@ -396,9 +406,9 @@ SongEditor:
 ; otherwise: toggle editable field
 	ld a, [wChannelSelector]
 	cp MP_EDIT_PITCH
-	jp z, SongEditor
+	jr z, SongEditor
 	cp MP_EDIT_TEMPO
-	jp z, AdjustTempo
+	jmp z, AdjustTempo
 	ld c, a
 	ld b, 0
 	ld hl, wChannelSelectorSwitches
@@ -407,7 +417,7 @@ SongEditor:
 	xor 1
 	ld [hl], a
 	call DrawChannelLabel
-	jp SongEditor
+	jmp SongEditor
 
 .up:
 ; for ch1/ch2: next duty cycle
@@ -417,7 +427,7 @@ SongEditor:
 	ld a, [wChannelSelector]
 	ld hl, .up_jumptable
 	call JumpTable
-	jp SongEditor
+	jmp SongEditor
 
 .up_jumptable
 	dw .up_ch1_2 ; MP_EDIT_CH1
@@ -435,7 +445,7 @@ SongEditor:
 	ld a, [wChannelSelector]
 	ld hl, .down_jumptable
 	call JumpTable
-	jp SongEditor
+	jmp SongEditor
 
 .down_jumptable:
 	dw .down_ch1_2 ; MP_EDIT_CH1
@@ -452,7 +462,7 @@ SongEditor:
 	xor 1
 	ld [hl], a
 	call DrawPianoRollOverlay
-	jp SongEditor
+	jmp SongEditor
 
 .select_b:
 ; exit song editor
@@ -461,7 +471,7 @@ SongEditor:
 	ld [wChannelSelector], a
 	call DrawPitchTransposition
 	call DrawTempoAdjustment
-	jp MusicPlayerLoop
+	jmp MusicPlayerLoop
 
 .up_ch1_2:
 ; next duty cycle
@@ -569,7 +579,7 @@ SongEditor:
 	; refresh top two portions
 	xor a
 	ldh [hBGMapHalf], a
-	jp DelayFrame
+	jmp DelayFrame
 
 AdjustTempo:
 	ld a, 1
@@ -647,7 +657,7 @@ AdjustTempo:
 	xor a
 	ldh [hBGMapHalf], a
 	call DelayFrame
-	jp .loop
+	jmp .loop
 
 .a:
 ; apply tempo adjustment and exit tempo adjustment mode
@@ -670,7 +680,7 @@ AdjustTempo:
 	xor a
 	ldh [hBGMapHalf], a
 	call DelayFrame
-	jp SongEditor
+	jmp SongEditor
 
 .start:
 ; toggle piano roll info overlay
@@ -679,7 +689,7 @@ AdjustTempo:
 	xor 1
 	ld [hl], a
 	call DrawPianoRollOverlay
-	jp .loop
+	jmp .loop
 
 DrawPianoRollOverlay:
 	; if this takes too long, don't let the user see blank fields blink in
@@ -701,7 +711,7 @@ DrawPianoRollOverlay:
 	; refresh top two portions
 	xor a
 	ldh [hBGMapHalf], a
-	jp DelayFrame
+	jmp DelayFrame
 
 DrawPitchTransposition:
 	hlcoord 15, 1
@@ -714,7 +724,7 @@ DrawPitchTransposition:
 	and a
 	ret z
 .continue
-	ld [hl], "P"
+	ld [hl], "P" ; no-optimize *hl++|*hl-- = N
 	inc hl
 	lb bc, PRINTNUM_LEFTALIGN | 1, 2
 	ld de, wPitchTransposition
@@ -731,7 +741,7 @@ DrawTempoAdjustment:
 	and a
 	ret z
 .continue
-	ld [hl], "T"
+	ld [hl], "T" ; no-optimize *hl++|*hl-- = N
 	inc hl
 	lb bc, PRINTNUM_LEFTALIGN | 1, 3
 	ld de, wTempoAdjustment
@@ -748,7 +758,7 @@ _PrintSignedNum:
 	ld a, "-"
 .printnum
 	ld [hli], a
-	jp PrintNum
+	jmp PrintNum
 
 _EmptyPitchOrTempo: db "     @"
 
@@ -822,7 +832,7 @@ DrawChannelLabel:
 	ld a, [wChannelSelector]
 	ld l, a
 	ld h, 0
-	add hl
+	add hl, hl
 	add l
 	ld l, a
 	add hl, de
@@ -883,25 +893,29 @@ _DrawCh1_2_3:
 	push hl
 	call CheckChannelOn
 	ld a, 0
-	ld hl, NoteNames
 	jr c, .blank_note_name
 	call GetPitchAddr
 	ld a, [hl]
-	ld hl, NoteNames
-	call GetNthString
 .blank_note_name
+	add a
+	ld e, a
+	ld d, 0
+	ld hl, NoteNames
+	add hl, de
 	ld e, l
 	ld d, h
 	pop hl
+	ld a, [de]
+	ld [hli], a
+	inc de
+	ld a, [de]
+	ld [hli], a
 	push hl
-	rst PlaceString
 	call GetOctaveAddr
 	ld d, [hl]
 	ld a, "8"
 	sub d
 	pop hl
-	inc hl
-	inc hl
 	ld [hli], a
 
 	ld a, [wTmpCh]
@@ -1465,7 +1479,7 @@ DrawSongID:
 	lb bc, 1, 3
 .print_id
 	ld de, wSongSelection
-	jp PrintNum
+	jmp PrintNum
 
 .print_digit
 	add "0"
@@ -1532,7 +1546,7 @@ SongSelector:
 	ld [wSelectorTop], a ; backup, in case of B button
 	cp MP_LIST_CURSOR_Y
 	jr nc, .ok
-	add NUM_SONGS - 1
+	add NUM_MUSIC_SONGS - 1
 .ok
 	sub MP_LIST_CURSOR_Y - 1
 	ld [wSongSelection], a
@@ -1554,9 +1568,9 @@ SongSelector:
 .a:
 ; select song
 	ld a, [wSongSelection]
-	cp NUM_SONGS - MP_LIST_CURSOR_Y + 1
+	cp NUM_MUSIC_SONGS - MP_LIST_CURSOR_Y + 1
 	jr c, .no_overflow
-	sub NUM_SONGS - MP_LIST_CURSOR_Y
+	sub NUM_MUSIC_SONGS - MP_LIST_CURSOR_Y
 	jr .got_song
 .no_overflow
 	add MP_LIST_CURSOR_Y - 1
@@ -1571,47 +1585,47 @@ SongSelector:
 	ld a, [wSongSelection]
 	dec a
 	jr nz, .no_underflow_up
-	ld a, NUM_SONGS - 1
+	ld a, NUM_MUSIC_SONGS - 1
 .no_underflow_up
 	ld [wSongSelection], a
 	call UpdateSelectorNames
-	jp .loop
+	jmp .loop
 
 .down:
 ; next song
 	ld a, [wSongSelection]
 	inc a
-	cp NUM_SONGS
+	cp NUM_MUSIC_SONGS
 	jr nz, .no_overflow_down
 	ld a, 1
 .no_overflow_down
 	ld [wSongSelection], a
 	call UpdateSelectorNames
-	jp .loop
+	jmp .loop
 
 .left:
 ; 10 songs back
 	ld a, [wSongSelection]
 	cp MP_LIST_PAGE_SKIP + 1
 	jr nc, .no_underflow_left
-	add NUM_SONGS - 1
+	add NUM_MUSIC_SONGS - 1
 .no_underflow_left
 	sub MP_LIST_PAGE_SKIP
 	ld [wSongSelection], a
 	call UpdateSelectorNames
-	jp .loop
+	jmp .loop
 
 .right:
 ; 10 songs ahead
 	ld a, [wSongSelection]
-	cp NUM_SONGS - MP_LIST_PAGE_SKIP
+	cp NUM_MUSIC_SONGS - MP_LIST_PAGE_SKIP
 	jr c, .no_overflow_right
-	sub NUM_SONGS - 1
+	sub NUM_MUSIC_SONGS - 1
 .no_overflow_right
 	add MP_LIST_PAGE_SKIP
 	ld [wSongSelection], a
 	call UpdateSelectorNames
-	jp .loop
+	jmp .loop
 
 .start_b:
 ; exit song selector
@@ -1645,7 +1659,7 @@ endr
 	inc b
 	inc c
 	ld a, c
-	cp NUM_SONGS
+	cp NUM_MUSIC_SONGS
 	jr c, .noOverflow
 	ld c, 1
 	ld de, SongInfo
@@ -1667,7 +1681,7 @@ MPGetJoypad:
 	dec a
 	ld [wTextDelayFrames], a
 .ok2
-	jp GetJoypad
+	jmp GetJoypad
 
 MPLPlaceString:
 	push hl
@@ -1681,8 +1695,8 @@ MPLPlaceString:
 	lb bc, 1, 3
 	call PrintNum
 	pop de
-	ld [hl], " "
-	inc hl
+	ld a, " "
+	ld [hli], a
 	push hl
 	push de
 	rst PlaceString
@@ -1711,7 +1725,7 @@ MPLPlaceString:
 	sub c
 	jr z, .ok
 .loop2
-	ld [hl], " "
+	ld [hl], " " ; no-optimize *hl++|*hl-- = N
 	inc hl
 	dec a
 	jr nz, .loop2
@@ -1721,8 +1735,8 @@ MPLPlaceString:
 	ld bc, 17
 	ld hl, wStringBuffer2
 	add hl, bc
-	ld [hl], "…"
-	inc hl
+	ld a, "…"
+	ld [hli], a
 	ld [hl], "@"
 .ok
 	pop hl
@@ -1733,22 +1747,11 @@ MPLPlaceString:
 	ret
 
 MPTilemap:
-db $00, $01, $02, $03, $04, $05, $06, $00, $01, $02, $03, $04, $05, $06, $00, $01, $02, $03, $04, $05
-db $07, $08, $09, $1e, $1d, $07, $08, $0a, $1e, $1d, $0b, $0c, $0d, $1e, $1d, $0e, $0f, $10, $1e, $1e
-db "    ", $1f, "    ", $1f, "    ", $1f, $1b, $1c, "   "
-db "    ", $1f, "    ", $1f, "    ", $1f, "     "
-
+INCBIN "gfx/music_player/music_player.tilemap"
 ChannelsOnTilemaps:
-	db $07, $08, $09
-	db $07, $08, $0a
-	db $0b, $0c, $0d
-	db $0e, $0f, $10
-
+INCBIN "gfx/music_player/channels_on.tilemap"
 ChannelsOffTilemaps:
-	db $11, $12, $13
-	db $11, $12, $14
-	db $15, $16, $17
-	db $18, $19, $1a
+INCBIN "gfx/music_player/channels_off.tilemap"
 
 NoteOAM:
 	; y, x, tile id, OAM attributes

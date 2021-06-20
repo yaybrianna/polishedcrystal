@@ -26,7 +26,7 @@ AnimateDexSearchSlowpoke:
 	ld [wDexSearchSlowpokeFrame], a
 	call DoDexSearchSlowpokeFrame
 	ld c, 32
-	jp DelayFrames
+	jmp DelayFrames
 
 .FrameIDs:
 	; frame ID, duration
@@ -79,7 +79,7 @@ DisplayDexEntry:
 	call GetPokemonName
 	hlcoord 9, 3
 	rst PlaceString ; mon species
-	ld a, [wd265]
+	ld a, [wTempSpecies]
 	ld b, a
 	call GetDexEntryPointer
 	ld a, b
@@ -95,11 +95,11 @@ DisplayDexEntry:
 	ld [hli], a
 	ld a, "."
 	ld [hli], a
-	ld de, wd265
+	ld de, wTempSpecies
 	lb bc, PRINTNUM_LEADINGZEROS | 1, 3
 	call PrintNum
 ; Check to see if we caught it.  Get out of here if we haven't.
-	ld a, [wd265]
+	ld a, [wTempSpecies]
 	dec a
 	call CheckCaughtMon
 	pop hl
@@ -112,7 +112,7 @@ DisplayDexEntry:
 	ld a, b
 	push af
 	push hl
-	call GetFarHalfword
+	call GetFarWord
 	ld d, l
 	ld e, h
 	pop hl
@@ -186,7 +186,7 @@ DisplayDexEntry:
 	inc hl
 	push hl
 	dec hl
-	call GetFarHalfword
+	call GetFarWord
 	ld d, l
 	ld e, h
 	ld a, e
@@ -227,12 +227,12 @@ DisplayDexEntry:
 	rst ByteFill
 	; page number
 	hlcoord 1, 9
-	ld [hl], $55
-	inc hl
-	ld [hl], $55
+	ld a, $55
+	ld [hli], a
+	ld [hl], a
 	hlcoord 1, 10
-	ld [hl], $56 ; P.
-	inc hl
+	ld a, $56 ; P.
+	ld [hli], a
 	ld [hl], $57 ; 1
 	pop de
 	inc de
@@ -257,18 +257,18 @@ DisplayDexEntry:
 	rst ByteFill
 	; page number
 	hlcoord 1, 9
-	ld [hl], $55
-	inc hl
-	ld [hl], $55
+	ld a, $55
+	ld [hli], a
+	ld [hl], a
 	hlcoord 1, 10
-	ld [hl], $56 ; P.
-	inc hl
+	ld a, $56 ; P.
+	ld [hli], a
 	ld [hl], $58 ; 2
 	pop de
 	inc de
 	pop af
 	hlcoord 2, 11
-	jp FarString
+	jmp FarString
 
 ; Metric conversion code by TPP Anniversary Crystal 251
 ; https://github.com/TwitchPlaysPokemon/tppcrystal251pub/blob/public/main.asm

@@ -2,7 +2,7 @@ BugContest_SetCaughtContestMon:
 	ld a, [wContestMon]
 	and a
 	jr z, .firstcatch
-	ld [wd265], a
+	ld [wNamedObjectIndex], a
 	call DisplayAlreadyCaughtText
 	call DisplayCaughtContestMonStats
 	call YesNoBox
@@ -11,10 +11,10 @@ BugContest_SetCaughtContestMon:
 .firstcatch
 	call .generatestats
 	ld a, [wTempEnemyMonSpecies]
-	ld [wd265], a
+	ld [wNamedObjectIndex], a
 	call GetPokemonName
 	ld hl, .caughttext
-	jp PrintText
+	jmp PrintText
 
 .generatestats
 	ld a, [wTempEnemyMonSpecies]
@@ -37,15 +37,15 @@ BugContest_SetCaughtContestMon:
 
 .caughttext
 	; Caught @ !
-	text_jump _ContestCaughtMonText
+	text_far _ContestCaughtMonText
 	text_end
 
 DisplayAlreadyCaughtText:
 	call GetPokemonName
 	ld hl, .AlreadyCaughtText
-	jp PrintText
+	jmp PrintText
 
 .AlreadyCaughtText:
 	; You already caught a @ .
-	text_jump _ContestAlreadyCaughtText
+	text_far _ContestAlreadyCaughtText
 	text_end

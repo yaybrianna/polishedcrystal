@@ -30,10 +30,10 @@ SetMenuMonIconColor:
 	push bc
 	push af
 
-	ld a, [wd265]
+	ld a, [wTempIconSpecies]
 	ld [wCurPartySpecies], a
 	call GetMenuMonIconPalette
-	jp ProcessMenuMonIconColor
+	jr ProcessMenuMonIconColor
 
 LoadFlyMonColor:
 	push hl
@@ -48,7 +48,7 @@ LoadFlyMonColor:
 	ld a, MON_SHINY
 	call GetPartyParamLocation
 	call GetMenuMonIconPalette
-	jp ProcessMenuMonIconColor
+	jr ProcessMenuMonIconColor
 
 LoadPartyMenuMonIconColors:
 	push hl
@@ -126,7 +126,7 @@ ProcessMenuMonIconColor:
 	jr nz, .colorIcon
 
 .finish
-	jp PopAFBCDEHL
+	jmp PopAFBCDEHL
 
 GetOverworldMonIconPalette::
 	ld a, [wCurIcon]
@@ -141,7 +141,7 @@ _GetMonIconPalette:
 	; b = form
 	inc hl ; Form is in the byte after Shiny
 	ld a, [hld]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld b, a
 
 	; check shininess at hl
@@ -174,7 +174,7 @@ LoadPartyMenuMonIcon:
 	call .SpawnItemIcon
 	call SetPartyMonIconAnimSpeed
 
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 .SpawnItemIcon:
 	ldh a, [hObjectStructIndexBuffer]
@@ -208,20 +208,24 @@ LoadMoveMenuMonIcon:
 	push bc
 
 	depixel 3, 4, 2, 4
+	push de
+	ld hl, wTempMonForm
+	jr _InitScreenMonIcon
 InitScreenMonIcon:
 	push de
 
 	ld a, MON_FORM ; aka MON_IS_EGG
 	call GetPartyParamLocation
+_InitScreenMonIcon:
 	ld a, [hl]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld [wCurIconForm], a
 	bit MON_IS_EGG_F, [hl]
-	ld a, [wd265]
+	ld a, [wTempIconSpecies]
 	jr z, .got_species
 	ld a, EGG
 .got_species
-	ld [wd265], a
+	ld [wTempIconSpecies], a
 	ld [wCurIcon], a
 
 	dec hl ; MON_SHINY = MON_FORM - 1
@@ -237,15 +241,7 @@ InitScreenMonIcon:
 	add hl, bc
 	ld [hl], SPRITE_ANIM_SEQ_NULL
 
-	jp PopBCDEHL
-
-LoadTradeAnimationMonIcon:
-	call SetMenuMonIconColor
-	ld a, [wd265]
-	ld [wCurIcon], a
-	ld a, $62
-	ld [wCurIconTile], a
-	jp GetMemIconGFX
+	jmp PopBCDEHL
 
 InitPartyMenuIcon:
 	ld a, [wCurIconTile]
@@ -260,7 +256,7 @@ InitPartyMenuIcon:
 	ld a, [hl]
 	bit MON_IS_EGG_F, a
 	jr nz, .egg
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld [wCurIconForm], a
 	ld hl, wPartySpecies
 	add hl, de
@@ -298,7 +294,7 @@ SetPartyMonIconAnimSpeed:
 	ld [hl], a
 	rlca
 	rlca
-	ld hl, SPRITEANIMSTRUCT_0D
+	ld hl, SPRITEANIMSTRUCT_VAR2
 	add hl, bc
 	ld [hl], a
 	ret
@@ -343,7 +339,7 @@ Fly_PrepMonIcon:
 	push de
 	ld a, MON_FORM
 	call GetPartyParamLocation
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld [wCurIconForm], a
 	ld a, [wCurPartyMon]
 	ld hl, wPartySpecies
@@ -351,7 +347,7 @@ Fly_PrepMonIcon:
 	ld d, 0
 	add hl, de
 	ld a, [hl]
-	ld [wd265], a
+	ld [wTempIconSpecies], a
 	ld [wCurIcon], a
 	pop de
 	ld a, e
@@ -360,11 +356,19 @@ Fly_PrepMonIcon:
 PokegearFlyMap_GetMonIcon:
 ; Load species icon into VRAM at tile a
 	call Fly_PrepMonIcon
-	jp GetIconGFX
+	jr GetIconGFX
 
 FlyFunction_GetMonIcon:
 	call Fly_PrepMonIcon
-	jp GetIcon_a
+	jr GetIcon_a
+
+LoadTradeAnimationMonIcon:
+	call SetMenuMonIconColor
+	ld a, [wTempIconSpecies]
+	ld [wCurIcon], a
+	ld a, $62
+	ld [wCurIconTile], a
+	; fallthrough
 
 GetMemIconGFX:
 	ld a, [wCurIconTile]
@@ -380,16 +384,15 @@ GetIconGFX:
 	ld [wCurIconTile], a
 	ret
 
-HeldItemIcons:
-INCBIN "gfx/icons/mail.2bpp"
-INCBIN "gfx/icons/item.2bpp"
-
 GetIcon_a:
 ; Load icon graphics into VRAM starting from tile a.
 	ld l, a
 	ld h, 0
-
+	; fallthrough
 GetIcon:
+	ld c, 8
+	; fallthrough
+DoGetIcon:
 ; Load icon graphics into VRAM starting from tile hl.
 
 ; One tile is 16 bytes long.
@@ -402,12 +405,47 @@ endr
 	push hl
 
 	push hl
+	ld a, c
+	push af
 	call LoadOverworldMonIcon
+	pop af
+	ld c, a
 	ld h, d
 	ld l, e
 	pop de
-
 	call DecompressRequest2bpp
+	pop hl
+	ret
+
+GetStorageIcon_a:
+; Load frame 1 icon graphics into VRAM starting from tile a
+	ld l, a ; no-optimize hl|bc|de = a * 16 (rept)
+	ld h, 0
+rept 4
+	add hl, hl
+endr
+	ld de, vTiles0
+	add hl, de
+	; fallthrough
+GetStorageIcon:
+	push hl
+
+	push hl
+	ld a, 4
+	push af
+	call LoadOverworldMonIcon
+	pop af
+	ld c, a
+	ld h, d
+	ld l, e
+	pop de
+	push de
+	push bc
+	call FarDecompressWRA6InB
+	pop bc
+	pop hl
+	ld de, wDecompressScratch
+	farcall BillsPC_SafeRequest2bppInWRA6
 	pop hl
 	ret
 
@@ -489,3 +527,7 @@ HoldSwitchmonIcon:
 	dec e
 	jr nz, .loop
 	ret
+
+HeldItemIcons:
+INCBIN "gfx/icons/mail.2bpp"
+INCBIN "gfx/icons/item.2bpp"

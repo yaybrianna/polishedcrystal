@@ -21,7 +21,7 @@ GiveMoney::
 	ret
 
 MaxMoney:
-	dt 9999999
+	dt MAX_MONEY
 
 TakeMoney::
 	call SubtractMoney
@@ -93,7 +93,7 @@ CompareFunds:
 	and a
 	scf
 .skip_carry
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 SubtractMoney:
 	ld a, 3
@@ -125,7 +125,7 @@ SubtractFunds:
 	dec hl
 	dec b
 	jr nz, .loop2
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 AddMoney:
 	ld a, 3
@@ -158,7 +158,7 @@ AddFunds:
 	dec b
 	jr nz, .loop2
 
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 GiveBP::
 	ld de, wBattlePoints

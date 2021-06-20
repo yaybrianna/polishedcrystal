@@ -142,7 +142,7 @@ CheckPhoneContactTimeOfDay:
 	and (1 << MORN) + (1 << DAY) + (1 << NITE) + (1 << EVE)
 	and c
 
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 ChooseRandomCaller:
 ; If no one is available to call, don't return anything.
@@ -264,7 +264,7 @@ CheckSpecialPhoneCall::
 
 .script
 	pause 30
-	jump Script_ReceivePhoneCall
+	sjump Script_ReceivePhoneCall
 
 .DoSpecialPhoneCall:
 	ld a, [wSpecialPhoneCallID]
@@ -331,7 +331,7 @@ MakePhoneCallFromPokegear:
 	ld hl, PHONE_CONTACT_SCRIPT1_BANK
 	add hl, de
 	ld b, [hl]
-	ld hl, PHONE_CONTACT_SCRIPT1_ADDR_LO
+	ld hl, PHONE_CONTACT_SCRIPT1_ADDR
 	add hl, de
 	ld a, [hli]
 	ld h, [hl]
@@ -341,7 +341,7 @@ MakePhoneCallFromPokegear:
 .OutOfArea:
 	ld b, BANK(LoadOutOfAreaScript)
 	ld de, LoadOutOfAreaScript
-	jp ExecuteCallbackScript
+	jmp ExecuteCallbackScript
 
 .DoPhoneCall:
 	ld a, b
@@ -352,15 +352,15 @@ MakePhoneCallFromPokegear:
 	ld [wPhoneCaller+1], a
 	ld b, BANK(LoadPhoneScriptBank)
 	ld de, LoadPhoneScriptBank
-	jp ExecuteCallbackScript
+	jmp ExecuteCallbackScript
 
 LoadPhoneScriptBank:
-	ptcall wPhoneScriptBank
-	return
+	memcall wPhoneScriptBank
+	endcallback
 
 LoadOutOfAreaScript:
 	scall PhoneOutOfAreaScript
-	return
+	endcallback
 
 PhoneOutOfAreaScript:
 	farwritetext _PhoneOutOfAreaText
@@ -369,6 +369,24 @@ PhoneOutOfAreaScript:
 PhoneScript_JustTalkToThem:
 	farwritetext _PhoneJustTalkToThemText
 	end
+
+Script_ReceivePhoneCall:
+	refreshscreen
+	callasm RingTwice_StartCall
+	memcall wCallerContact + PHONE_CONTACT_SCRIPT2_BANK
+	waitbutton
+	callasm HangUp
+	closetext
+	callasm InitCallReceiveDelay
+	end
+
+Script_SpecialBillCall::
+	callasm .LoadBillScript
+	sjump Script_ReceivePhoneCall
+
+.LoadBillScript:
+	ld e, PHONE_BILL
+	; fallthrough
 
 LoadCallerScript:
 	ld a, e
@@ -388,31 +406,13 @@ LoadCallerScript:
 .proceed
 	ld de, wPhoneListIndex
 	ld bc, 12
-	jp FarCopyBytes
+	jmp FarCopyBytes
 
 WrongNumber:
 	db TRAINER_NONE, PHONE_00
 	dba .script
 .script
 	farjumptext _PhoneWrongNumberText
-
-Script_ReceivePhoneCall:
-	refreshscreen
-	callasm RingTwice_StartCall
-	ptcall wCallerContact + PHONE_CONTACT_SCRIPT2_BANK
-	waitbutton
-	callasm HangUp
-	closetext
-	callasm InitCallReceiveDelay
-	end
-
-Script_SpecialBillCall::
-	callasm .LoadBillScript
-	jump Script_ReceivePhoneCall
-
-.LoadBillScript:
-	ld e, PHONE_BILL
-	jp LoadCallerScript
 
 RingTwice_StartCall:
 	call .Ring
@@ -430,8 +430,8 @@ Phone_TextboxWithName:
 	push bc
 	call Phone_CallerTextbox
 	hlcoord 1, 1
-	ld [hl], "<PHONE>"
-	inc hl
+	ld a, "<PHONE>"
+	ld [hli], a
 	inc hl
 	ld d, h
 	ld e, l
@@ -516,24 +516,30 @@ Phone_CallEnd:
 	call HangUp_BoopOn
 	call HangUp_Wait20Frames
 	call SpeechTextbox
-	jp HangUp_Wait20Frames
+	; fallthrough
+
+HangUp_Wait20Frames:
+Phone_Wait20Frames:
+	ld c, 20
+	call DelayFrames
+	jmp ApplyTilemap
 
 HangUp_Beep:
 	ld hl, PhoneClickText
 	call PrintText
 	ld de, SFX_HANG_UP
-	jp PlaySFX
+	jmp PlaySFX
 
 PhoneClickText:
-	text_jump _PhoneClickText
+	text_far _PhoneClickText
 	text_end
 
 HangUp_BoopOn:
 	ld hl, PhoneEllipseText
-	jp PrintText
+	jmp PrintText
 
 PhoneEllipseText:
-	text_jump _PhoneEllipseText
+	text_far _PhoneEllipseText
 	text_end
 
 Phone_StartRinging:
@@ -542,18 +548,12 @@ Phone_StartRinging:
 	call PlaySFX
 	call Phone_CallerTextbox
 	call UpdateSprites
-	jp ApplyTilemap
-
-HangUp_Wait20Frames:
-Phone_Wait20Frames:
-	ld c, 20
-	call DelayFrames
-	jp ApplyTilemap
+	jmp ApplyTilemap
 
 Phone_CallerTextbox:
 	hlcoord 0, 0
 	lb bc, 2, SCREEN_WIDTH - 2
-	jp Textbox
+	jmp Textbox
 
 CheckCanDeletePhoneNumber:
 	ld a, c

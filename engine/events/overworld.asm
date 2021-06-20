@@ -19,18 +19,18 @@ FieldMoveJumptable:
 	scf
 	ret
 
-GetPartyNick:
+GetPartyNickname:
 ; write wCurPartyMon nickname to wStringBuffer1-3
 	ld hl, wPartyMonNicknames
 	ld a, BOXMON
 	ld [wMonType], a
 	ld a, [wCurPartyMon]
-	call GetNick
+	call GetNickname
 	call CopyName1
 ; copy text from wStringBuffer2 to wStringBuffer3
 	ld de, wStringBuffer2
 	ld hl, wStringBuffer3
-	jp CopyName2
+	jmp CopyName2
 
 CheckEngineFlag:
 ; Check engine flag de
@@ -59,7 +59,7 @@ CheckBadge:
 .BadgeRequiredText:
 	; Sorry! A new BADGE
 	; is required.
-	text_jump _BadgeRequiredText
+	text_far _BadgeRequiredText
 	text_end
 
 CheckPartyMove:
@@ -128,7 +128,7 @@ CheckForSurfingPikachu:
 	ret
 
 FieldMovePokepicScript:
-	copybytetovar wBuffer6
+	readmem wBuffer6
 	refreshscreen
 	pokepic 0
 	cry 0
@@ -139,11 +139,11 @@ FieldMovePokepicScript:
 
 FieldMoveFailed:
 	ld hl, .CantUseHere
-	jp MenuTextboxBackup
+	jmp MenuTextboxBackup
 
 .CantUseHere:
 	; Can't use that here.
-	text_jump _CantUseItemText
+	text_far _CantUseItemText
 	text_end
 
 CutFunction:
@@ -193,7 +193,7 @@ CutFunction:
 
 Text_NothingToCut:
 	; There's nothing to CUT here.
-	text_jump _CutNothingText
+	text_far _CutNothingText
 	text_end
 
 CheckMapForSomethingToCut:
@@ -277,7 +277,7 @@ CutDownGrass:
 	call BufferScreen
 	call GetMovementPermissions
 	call UpdateSprites
-	jp DelayFrame
+	jmp DelayFrame
 
 CheckOverworldTileArrays:
 	; Input: c contains the tile you're facing
@@ -298,8 +298,8 @@ CheckOverworldTileArrays:
 	ld h, [hl]
 	ld l, a
 	; Look up the tile you're facing
-	ld de, 2
 	ld a, c
+	dec de ; ld de, 2
 	call IsInArray
 	jr nc, .nope
 	; Load the replacement to b
@@ -312,7 +312,7 @@ CheckOverworldTileArrays:
 	xor a
 	ret
 
-INCLUDE "data/events/field_move_blocks.asm"
+INCLUDE "data/collision/field_move_blocks.asm"
 
 Script_CutTree:
 	callasm PrepareOverworldMove
@@ -343,7 +343,32 @@ CutDownTree:
 	call GetMovementPermissions
 	call UpdateSprites
 	call DelayFrame
-	jp LoadStandardFont
+	jmp LoadStandardFont
+
+TryFlashOW::
+	ld a, [wTimeOfDayPalset]
+	cp DARKNESS_PALSET
+	jr nz, .quit
+	ld d, FLASH
+	call CheckPartyMove
+	jr c, .quit
+	call GetPartyNickname
+	ld a, BANK(AskFlashScript)
+	ld hl, AskFlashScript
+	call CallScript
+	scf
+	ret
+
+.quit
+	xor a
+	ret
+
+AskFlashScript:
+	opentext
+	farwritetext _AskFlashText
+	yesorno
+	iftrue Script_UseFlash
+	endtext
 
 OWFlash:
 	call .CheckUseFlash
@@ -372,7 +397,7 @@ OWFlash:
 
 UseFlash:
 	ld hl, Script_UseFlash
-	jp QueueScript
+	jmp QueueScript
 
 Script_UseFlash:
 	reloadmappart
@@ -385,8 +410,8 @@ Script_UseFlash:
 	endtext
 
 UseFlashTextScript:
-	text_jump _BlindingFlashText
-	start_asm
+	text_far _BlindingFlashText
+	text_asm
 	call WaitSFX
 	ld de, SFX_FLASH
 	call PlaySFX
@@ -445,7 +470,7 @@ SurfFunction:
 .DoSurf:
 	call GetSurfType
 	ld [wBuffer2], a
-	call GetPartyNick
+	call GetPartyNickname
 	ld hl, SurfFromMenuScript
 	call QueueScript
 	ld a, $81
@@ -476,22 +501,22 @@ UsedSurfScript:
 	scall FieldMovePokepicScript
 
 AutoSurfScript:
-	copybytetovar wBuffer2
-	writevarcode VAR_MOVEMENT
+	readmem wBuffer2
+	writevar VAR_MOVEMENT
 
 	special UpdatePlayerSprite
-	special PlayMapMusic
+	playmapmusic
 ; step into the water
 	special Special_SurfStartStep ; (slow_step_x, step_end)
 	applymovement PLAYER, wMovementBuffer ; PLAYER, MovementBuffer
 	end
 
 CantSurfText:
-	text_jump _CantSurfText
+	text_far _CantSurfText
 	text_end
 
 AlreadySurfingText:
-	text_jump _AlreadySurfingText
+	text_far _AlreadySurfingText
 	text_end
 
 GetSurfType:
@@ -577,7 +602,7 @@ TrySurfOW::
 
 	call GetSurfType
 	ld [wBuffer2], a
-	call GetPartyNick
+	call GetPartyNickname
 
 	ld a, BANK(AskSurfScript)
 	ld hl, AskSurfScript
@@ -716,7 +741,7 @@ FlyFunction:
 	farscall Script_AbortBugContest
 	special WarpToSpawnPoint
 	callasm SkipUpdateMapSprites
-	writecode VAR_MOVEMENT, PLAYER_NORMAL
+	loadvar VAR_MOVEMENT, PLAYER_NORMAL
 	newloadmap MAPSETUP_FLY
 	callasm FlyToAnim
 	special WaitSFX
@@ -726,7 +751,7 @@ FlyFunction:
 .ReturnFromFly:
 	farcall ReturnFromFly_SpawnOnlyPlayer
 	call DelayFrame
-	jp UpdatePlayerSprite
+	jmp UpdatePlayerSprite
 
 WaterfallFunction:
 	call .TryWaterfall
@@ -893,7 +918,7 @@ EscapeRopeOrDig:
 	ld a, [wBuffer2]
 	cp $2
 	jr nz, .escaperope
-	call GetPartyNick
+	call GetPartyNickname
 	ld hl, .UsedDigScript
 	call QueueScript
 	ld a, $81
@@ -921,7 +946,7 @@ EscapeRopeOrDig:
 
 .Text_CantUseHere:
 	; Can't use that here.
-	text_jump _CantUseDigText
+	text_far _CantUseDigText
 	text_end
 
 .UsedEscapeRopeScript:
@@ -930,7 +955,7 @@ EscapeRopeOrDig:
 	farwritetext _UseEscapeRopeText
 	waitbutton
 	closetext
-	jump .UsedDigOrEscapeRopeScript
+	sjump .UsedDigOrEscapeRopeScript
 
 .UsedDigScript:
 	reloadmappart
@@ -946,7 +971,7 @@ EscapeRopeOrDig:
 	applymovement PLAYER, .DigOut
 	farscall Script_AbortBugContest
 	special WarpToSpawnPoint
-	writecode VAR_MOVEMENT, PLAYER_NORMAL
+	loadvar VAR_MOVEMENT, PLAYER_NORMAL
 	newloadmap MAPSETUP_DOOR
 	playsound SFX_WARP_FROM
 	applymovement PLAYER, .DigReturn
@@ -996,7 +1021,7 @@ TeleportFunction:
 	ret
 
 .DoTeleport:
-	call GetPartyNick
+	call GetPartyNickname
 	ld hl, .TeleportScript
 	call QueueScript
 	ld a, $81
@@ -1010,7 +1035,7 @@ TeleportFunction:
 
 .Text_CantUseHere:
 	; Can't use that here.
-	text_jump _CantUseTeleportText
+	text_far _CantUseTeleportText
 	text_end
 
 .TeleportScript:
@@ -1020,7 +1045,7 @@ TeleportFunction:
 	applymovement PLAYER, .TeleportFrom
 	farscall Script_AbortBugContest
 	special WarpToSpawnPoint
-	writecode VAR_MOVEMENT, PLAYER_NORMAL
+	loadvar VAR_MOVEMENT, PLAYER_NORMAL
 	newloadmap MAPSETUP_TELEPORT
 	playsound SFX_WARP_FROM
 	applymovement PLAYER, .TeleportTo
@@ -1067,7 +1092,7 @@ PrepareOverworldMove:
 	add hl, de
 	ld a, [hl]
 	ld [wBuffer6], a
-	jp GetPartyNick
+	jmp GetPartyNickname
 
 Script_StrengthFromMenu:
 	reloadmappart
@@ -1087,7 +1112,7 @@ AskStrengthScript:
 	callasm TryStrengthOW
 	iffalse .AskStrength
 	ifequal $1, .DontMeetRequirements
-	jump .AlreadyUsedStrength
+	sjump .AlreadyUsedStrength
 
 .DontMeetRequirements:
 	farjumptext _BouldersMayMoveText
@@ -1213,7 +1238,7 @@ Script_UsedWhirlpool:
 
 Script_AutoWhirlpool:
 	playsound SFX_SURF
-	checkcode VAR_FACING
+	readvar VAR_FACING
 	ifequal UP, .Up
 	ifequal DOWN, .Down
 	ifequal RIGHT, .Right
@@ -1423,11 +1448,11 @@ RockSmashScript:
 AutoRockSmashScript:
 	playsound SFX_STRENGTH
 	earthquake 84
-	applymovement2 MovementData_RockSmash
+	applymovementlasttalked MovementData_RockSmash
 	disappear -2
 
 	callasm RockMonEncounter
-	copybytetovar wTempWildMonSpecies
+	readmem wTempWildMonSpecies
 	iffalse .no_battle
 	randomwildmon
 	startbattle
@@ -1615,7 +1640,7 @@ Script_GotAnItem:
 	callasm Fishing_CheckFacingUp
 	iffalse .NotFacingUp
 	applymovement PLAYER, Movement_HookedItemFacingUp
-	jump .GetTheHookedItem
+	sjump .GetTheHookedItem
 .NotFacingUp:
 	applymovement PLAYER, Movement_HookedItemNotFacingUp
 .GetTheHookedItem:
@@ -1632,7 +1657,7 @@ Script_GotABite:
 	callasm Fishing_CheckFacingUp
 	iffalse .NotFacingUp
 	applymovement PLAYER, Movement_BiteFacingUp
-	jump .FightTheHookedPokemon
+	sjump .FightTheHookedPokemon
 .NotFacingUp:
 	applymovement PLAYER, Movement_BiteNotFacingUp
 .FightTheHookedPokemon:
@@ -1684,7 +1709,7 @@ Fishing_CheckFacingUp:
 
 Script_FishCastRod:
 	reloadmappart
-	loadvar hBGMapMode, $0
+	loadmem hBGMapMode, $0
 	special UpdateTimePals
 	callasm LoadFishingGFX
 	loademote EMOTE_SHOCK
@@ -1702,7 +1727,7 @@ PutTheRodAway:
 	ld a, $1
 	ld [wPlayerAction], a
 	call UpdateSprites
-	jp UpdatePlayerSprite
+	jmp UpdatePlayerSprite
 
 CurItemToScriptVar:
 	ld a, [wCurItem]
@@ -1726,6 +1751,7 @@ BikeFunction:
 	jr .CannotUseBike
 
 .GetOnBike:
+	call PlayBikeMusic
 	ld hl, Script_GetOnBike
 	ld de, Script_GetOnBike_Register
 	call .CheckIfRegistered
@@ -1786,34 +1812,33 @@ BikeFunction:
 Script_GetOnBike:
 	reloadmappart
 	special UpdateTimePals
-	writecode VAR_MOVEMENT, PLAYER_BIKE
+	loadvar VAR_MOVEMENT, PLAYER_BIKE
 	farwritetext _GotOnBikeText
 	waitbutton
 FinishGettingOnBike:
 	closetext
 	special UpdatePlayerSprite
-	special PlayMapMusic
 	end
 
 Script_GetOnBike_Register:
-	writecode VAR_MOVEMENT, PLAYER_BIKE
-	jump FinishGettingOnBike
+	loadvar VAR_MOVEMENT, PLAYER_BIKE
+	sjump FinishGettingOnBike
 
 Script_GetOffBike:
 	reloadmappart
 	special UpdateTimePals
-	writecode VAR_MOVEMENT, PLAYER_NORMAL
+	loadvar VAR_MOVEMENT, PLAYER_NORMAL
 	farwritetext _GotOffBikeText
 	waitbutton
 FinishGettingOffBike:
 	closetext
 	special UpdatePlayerSprite
-	special PlayMapMusic
+	playmapmusic
 	end
 
 Script_GetOffBike_Register:
-	writecode VAR_MOVEMENT, PLAYER_NORMAL
-	jump FinishGettingOffBike
+	loadvar VAR_MOVEMENT, PLAYER_NORMAL
+	sjump FinishGettingOffBike
 
 Script_CantGetOffBike:
 	farwritetext _CantGetOffBikeText

@@ -31,11 +31,11 @@ TryAddMonToParty:
 	ld a, -1
 	ld [de], a
 	; Now let's load the OT name.
-	ld hl, wPartyMonOT
+	ld hl, wPartyMonOTs
 	ld a, [wMonType]
 	and $f
 	jr z, .loadOTname
-	ld hl, wOTPartyMonOT
+	ld hl, wOTPartyMonOTs
 
 .loadOTname
 	ldh a, [hMoveMon] ; Restore index from backup
@@ -47,7 +47,7 @@ TryAddMonToParty:
 	ld bc, NAME_LENGTH
 	rst CopyBytes
 	ld a, [wCurPartySpecies]
-	ld [wd265], a
+	ld [wNamedObjectIndex], a
 	call GetPokemonName
 	ld a, [wMonType]
 	and $f
@@ -107,7 +107,7 @@ TryAddMonToParty:
 	inc hl
 	ld a, [wTrainerGroupBank]
 	call GetFarByte
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 .got_trainer_form
 	ld [wCurForm], a
 .not_trainer_form
@@ -118,7 +118,7 @@ TryAddMonToParty:
 	ld a, wRoamMon1Form - wRoamMon1
 	farcall DoGetRoamMonData
 	ld a, [hl]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld [wCurForm], a
 .not_roaming_form
 
@@ -210,7 +210,7 @@ endr
 	farcall GetTrainerEVsDVsAndPersonality
 	pop hl
 	push hl
-	jp .initializetrainermonstats
+	jmp .initializetrainermonstats
 
 .generateEVsDVsAndPersonality
 	xor a
@@ -224,11 +224,11 @@ endr
 	push hl
 	jr z, .wildmon
 	ld a, [wCurPartySpecies]
-	ld [wd265], a
+	ld [wTempSpecies], a
 	dec a
 	push de
 	call CheckCaughtMon
-	ld a, [wd265]
+	ld a, [wTempSpecies]
 	dec a
 	call SetSeenAndCaughtMon
 	pop de
@@ -257,7 +257,7 @@ endr
 	rst CopyBytes
 	pop de
 	pop bc
-	jp .initializetrainermonstats
+	jmp .initializetrainermonstats
 
 .random_dvs
 ; Random DVs
@@ -397,7 +397,7 @@ endr
 	ld a, [wCurPartySpecies]
 	ld c, a
 	ld a, [wPartyMon1Form]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld b, a
 	call GetGenderRatio
 	pop af
@@ -474,7 +474,7 @@ endr
 	ld b, TRUE
 	push hl
 	push de
-	call CalcPkmnStats
+	predef CalcPkmnStats
 	pop hl
 	push bc
 	inc hl
@@ -488,7 +488,6 @@ endr
 	pop bc
 	pop hl
 
-.next3
 	ld a, [wMonType]
 	and $f
 	jr nz, .done
@@ -528,7 +527,7 @@ FillPP:
 	pop bc
 	ret
 
-AddTempmonToParty:
+AddTempMonToParty:
 	ld hl, wPartyCount
 	ld a, [hl]
 	cp PARTY_LENGTH
@@ -554,15 +553,13 @@ AddTempmonToParty:
 	ld hl, wTempMonSpecies
 	rst CopyBytes
 
-	ld hl, wPartyMonOT
+	ld hl, wPartyMonOTs
 	ld a, [wPartyCount]
 	dec a
 	call SkipNames
 	ld d, h
 	ld e, l
-	ld hl, wOTPartyMonOT
-	ld a, [wCurPartyMon]
-	call SkipNames
+	ld hl, wTempMonOT
 	ld bc, NAME_LENGTH
 	rst CopyBytes
 
@@ -572,14 +569,12 @@ AddTempmonToParty:
 	call SkipNames
 	ld d, h
 	ld e, l
-	ld hl, wOTPartyMonNicknames
-	ld a, [wCurPartyMon]
-	call SkipNames
+	ld hl, wTempMonNickname
 	ld bc, MON_NAME_LENGTH
 	rst CopyBytes
 
 	ld a, [wCurPartySpecies]
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 
 	ld hl, wPartyMon1IsEgg
 	ld a, [wPartyCount]
@@ -635,338 +630,11 @@ AddTempmonToParty:
 	and a
 	ret
 
-SentGetPkmnIntoFromBox:
-; Sents/Gets Pkmn into/from Box depending on Parameter
-; wPokemonWithdrawDepositParameter == 0: get Pkmn into Party
-; wPokemonWithdrawDepositParameter == 1: sent Pkmn into Box
-; wPokemonWithdrawDepositParameter == 2: get Pkmn from DayCare
-; wPokemonWithdrawDepositParameter == 3: put Pkmn into DayCare
-	; Failsafe: never allow writing $ff to species bytes
-	ld a, [wCurPartySpecies]
-	cp EGG
-	jr nz, .species_valid
-	ld a, ERR_EGG_SPECIES
-	jp Crash
-
-.species_valid
-	ld a, BANK(sBoxCount)
-	call GetSRAMBank
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .check_IfPartyIsFull
-	cp DAYCARE_WITHDRAW
-	jr z, .check_IfPartyIsFull
-	cp DAYCARE_DEPOSIT
-	ld hl, wBreedMon1Species
-	jr z, .breedmon
-
-	; we want to sent a Pkmn into the Box
-	; so check if there's enough space
-	ld hl, sBoxCount
-	ld a, [hl]
-	cp MONS_PER_BOX
-	jr nz, .there_is_room
-	jp CloseSRAM_And_SetCarryFlag
-
-.check_IfPartyIsFull
-	ld hl, wPartyCount
-	ld a, [hl]
-	cp PARTY_LENGTH
-	jp z, CloseSRAM_And_SetCarryFlag
-
-.there_is_room
-	inc a
-	ld [hl], a
-	ld c, a
-	ld b, 0
-	add hl, bc
-	ld a, [wPokemonWithdrawDepositParameter]
-	cp DAYCARE_WITHDRAW
-	ld a, [wBreedMon1Species]
-	jr z, .okay1
-	ld a, [wCurPartySpecies]
-
-.okay1
-	ld [hli], a
-	ld [hl], $ff
-	ld a, [wPokemonWithdrawDepositParameter]
-	dec a
-	ld hl, wPartyMon1Species
-	ld bc, PARTYMON_STRUCT_LENGTH
-	ld a, [wPartyCount]
-	jr nz, .okay2
-	ld hl, sBoxMon1Species
-	ld bc, BOXMON_STRUCT_LENGTH
-	ld a, [sBoxCount]
-
-.okay2
-	dec a ; wPartyCount - 1
-	rst AddNTimes
-
-.breedmon
-	push hl
-	ld e, l
-	ld d, h
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	ld hl, sBoxMon1Species
-	ld bc, BOXMON_STRUCT_LENGTH
-	jr z, .okay3
-	cp DAYCARE_WITHDRAW
-	ld hl, wBreedMon1Species
-	jr z, .okay4
-	ld hl, wPartyMon1Species
-	ld bc, PARTYMON_STRUCT_LENGTH
-
-.okay3
-	ld a, [wCurPartyMon]
-	rst AddNTimes
-
-.okay4
-	ld bc, BOXMON_STRUCT_LENGTH
-	rst CopyBytes
-	ld a, [wPokemonWithdrawDepositParameter]
-	cp DAYCARE_DEPOSIT
-	ld de, wBreedMon1OT
-	jr z, .okay5
-	dec a
-	ld hl, wPartyMonOT
-	ld a, [wPartyCount]
-	jr nz, .okay6
-	ld hl, sBoxMonOT
-	ld a, [sBoxCount]
-
-.okay6
-	dec a
-	call SkipNames
-	ld d, h
-	ld e, l
-
-.okay5
-	ld hl, sBoxMonOT
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .okay7
-	ld hl, wBreedMon1OT
-	cp DAYCARE_WITHDRAW
-	jr z, .okay8
-	ld hl, wPartyMonOT
-
-.okay7
-	ld a, [wCurPartyMon]
-	call SkipNames
-
-.okay8
-	ld bc, NAME_LENGTH
-	rst CopyBytes
-	ld a, [wPokemonWithdrawDepositParameter]
-	cp DAYCARE_DEPOSIT
-	ld de, wBreedMon1Nick
-	jr z, .okay9
-	dec a
-	ld hl, wPartyMonNicknames
-	ld a, [wPartyCount]
-	jr nz, .okay10
-	ld hl, sBoxMonNicknames
-	ld a, [sBoxCount]
-
-.okay10
-	dec a
-	call SkipNames
-	ld d, h
-	ld e, l
-
-.okay9
-	ld hl, sBoxMonNicknames
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .okay11
-	ld hl, wBreedMon1Nick
-	cp DAYCARE_WITHDRAW
-	jr z, .okay12
-	ld hl, wPartyMonNicknames
-
-.okay11
-	ld a, [wCurPartyMon]
-	call SkipNames
-
-.okay12
-	ld bc, MON_NAME_LENGTH
-	rst CopyBytes
-	pop hl
-
-	ld a, [wPokemonWithdrawDepositParameter]
-	cp PC_DEPOSIT
-	jr z, .took_out_of_box
-	cp DAYCARE_DEPOSIT
-	jp z, .CloseSRAM_And_ClearCarryFlag
-
-	push hl
-	srl a
-	add $2
-	ld [wMonType], a
-	predef CopyPkmnToTempMon
-	farcall CalcLevel
-	ld a, d
-	ld [wCurPartyLevel], a
-	pop hl
-
-	ld b, h
-	ld c, l
-	ld hl, MON_LEVEL
-	add hl, bc
-	ld [hl], a
-	ld hl, MON_MAXHP
-	add hl, bc
-	ld d, h
-	ld e, l
-	ld hl, MON_EVS - 1
-	add hl, bc
-
-	push bc
-	push hl
-	ld hl, sBoxMonOT
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .prepare_hyper_addr
-	ld hl, wBreedMon1OT
-	cp DAYCARE_WITHDRAW
-	jr z, .got_hyper_addr
-	ld hl, wPartyMonOT
-
-.prepare_hyper_addr
-	ld a, [wCurPartyMon]
-	call SkipNames
-
-.got_hyper_addr
-	ld bc, PLAYER_NAME_LENGTH
-	add hl, bc
-	ld a, [hl]
-	and HYPER_TRAINING_MASK
-	pop hl
-	inc a
-	ld b, a
-	call CalcPkmnStats
-	pop bc
-
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr nz, .CloseSRAM_And_ClearCarryFlag
-	ld hl, MON_STATUS
-	add hl, bc
-	xor a
-	ld [hl], a
-	ld hl, MON_HP
-	add hl, bc
-	ld d, h
-	ld e, l
-	push hl
-	ld hl, MON_IS_EGG
-	add hl, bc
-	bit MON_IS_EGG_F, [hl]
-	pop hl
-	jr nz, .egg
-	inc hl
-	inc hl
-	ld a, [hli]
-	ld [de], a
-	ld a, [hl]
-	inc de
-	ld [de], a
-	jr .CloseSRAM_And_ClearCarryFlag
-
-.egg
-	xor a
-	ld [de], a
-	inc de
-	ld [de], a
-	jr .CloseSRAM_And_ClearCarryFlag
-
-.took_out_of_box
-	ld a, [sBoxCount]
-	dec a
-	ld b, a
-	call RestorePPofDepositedPokemon
-.CloseSRAM_And_ClearCarryFlag:
-	call CloseSRAM
-	and a
-	ret
-
-CloseSRAM_And_SetCarryFlag:
-	call CloseSRAM
-	scf
-	ret
-
-RestorePPofDepositedPokemon:
-	ld a, b
-	ld hl, sBoxMons
-	ld bc, BOXMON_STRUCT_LENGTH
-	rst AddNTimes
-	ld b, h
-	ld c, l
-	ld hl, MON_PP
-	add hl, bc
-	push hl
-	push bc
-	ld de, wTempMonPP
-	ld bc, NUM_MOVES
-	rst CopyBytes
-	pop bc
-	ld hl, MON_MOVES
-	add hl, bc
-	push hl
-	ld de, wTempMonMoves
-	ld bc, NUM_MOVES
-	rst CopyBytes
-	pop hl
-	pop de
-
-	ld a, [wMenuCursorY]
-	push af
-	ld a, [wMonType]
-	push af
-	ld b, 0
-.loop
-	ld a, [hli]
-	and a
-	jr z, .done
-	ld [wTempMonMoves], a
-	ld a, BOXMON
-	ld [wMonType], a
-	ld a, b
-	ld [wMenuCursorY], a
-	push bc
-	push hl
-	push de
-	call GetMaxPPOfMove
-	pop de
-	pop hl
-	ld a, [wd265]
-	ld b, a
-	ld a, [de]
-	and %11000000
-	add b
-	ld [de], a
-	pop bc
-	inc de
-	inc b
-	ld a, b
-	cp NUM_MOVES
-	jr c, .loop
-
-.done
-	pop af
-	ld [wMonType], a
-	pop af
-	ld [wMenuCursorY], a
-	ret
-
 RetrievePokemonFromDayCareMan:
 	ld a, [wBreedMon1Species]
 	ld [wCurPartySpecies], a
 	ld de, SFX_TRANSACTION
-	call PlaySFX
-	call WaitSFX
+	call PlayWaitSFX
 	call GetBreedMon1LevelGrowth
 	ld a, b
 	ld [wPrevPartyLevel], a
@@ -980,8 +648,7 @@ RetrievePokemonFromDayCareLady:
 	ld a, [wBreedMon2Species]
 	ld [wCurPartySpecies], a
 	ld de, SFX_TRANSACTION
-	call PlaySFX
-	call WaitSFX
+	call PlayWaitSFX
 	call GetBreedMon2LevelGrowth
 	ld a, b
 	ld [wPrevPartyLevel], a
@@ -1008,10 +675,10 @@ RetrieveBreedmon:
 	ld a, [wPokemonWithdrawDepositParameter]
 	and a
 	ld a, [wBreedMon1Species]
-	ld de, wBreedMon1Nick
+	ld de, wBreedMon1Nickname
 	jr z, .okay
 	ld a, [wBreedMon2Species]
-	ld de, wBreedMon2Nick
+	ld de, wBreedMon2Nickname
 
 .okay
 	ld [hli], a
@@ -1024,7 +691,7 @@ RetrieveBreedmon:
 	call SwapHLDE
 	rst CopyBytes
 	push hl
-	ld hl, wPartyMonOT
+	ld hl, wPartyMonOTs
 	ld a, [wPartyCount]
 	dec a
 	call SkipNames
@@ -1039,7 +706,7 @@ RetrieveBreedmon:
 	ld a, [hl]
 	ld [wCurForm], a
 	pop hl
-	ld bc, BOXMON_STRUCT_LENGTH
+	ld bc, BREEDMON_STRUCT_LENGTH
 	rst CopyBytes
 	call GetBaseData
 	call GetLastPartyMon
@@ -1062,7 +729,7 @@ RetrieveBreedmon:
 	call GetHyperTraining
 	inc a
 	ld b, a
-	call CalcPkmnStats
+	predef CalcPkmnStats
 	ld hl, wPartyMon1Moves
 	ld a, [wPartyCount]
 	dec a
@@ -1096,6 +763,148 @@ RetrieveBreedmon:
 	and a
 	ret
 
+Special_HyperTrain:
+	farcall SelectMonFromParty
+	jmp c, .nope
+	ld a, MON_IS_EGG
+	call GetPartyParamLocation
+	bit MON_IS_EGG_F, [hl]
+	ld hl, .TextCantTrainEgg
+	jr nz, .print_and_fail
+
+	call GetCurNickname
+	ld hl, .TrainWhichStat
+	call PrintText
+
+	ld hl, .MenuHeader
+	call LoadMenuHeader
+	call _2DMenu
+	push af
+	call CloseWindow
+	pop af
+	jr c, .nope
+	ld a, [wMenuCursorY]
+	ld hl, wMenuCursorX
+	dec [hl]
+	jr z, .got_y
+	add 3
+.got_y
+	ld c, a
+	ld d, 1
+.loop
+	rrc d
+	dec a
+	jr nz, .loop
+
+	; Check if we've reached maximum effort on the stat
+	ld a, MON_EVS - 1
+	add c
+	call GetPartyParamLocation
+	cp 252
+	ld hl, .TextNotMaxEffort
+	jr c, .print_and_fail
+
+	ld a, [wCurPartyMon]
+	ld hl, wPartyMon1HyperTraining
+	call SkipNames
+	ld a, [hl]
+	and d
+	jr nz, .already_hyped
+	or d
+	or [hl]
+	ld [hl], a
+	ld b, a
+
+	; Recalculate stats.
+	push bc
+	ld a, MON_SPECIES
+	call GetPartyParamLocation
+	ld [wCurSpecies], a
+	ld a, MON_FORM
+	call GetPartyParamLocation
+	ld [wCurForm], a
+	call GetBaseData
+	pop bc
+
+	ld a, MON_LEVEL
+	call GetPartyParamLocation
+	ld [wCurPartyLevel], a
+
+	ld a, MON_MAXHP
+	call GetPartyParamLocation
+	push hl
+	ld a, MON_EVS - 1
+	call GetPartyParamLocation
+	pop de
+	predef CalcPkmnStats
+
+	ld a, 1
+	jr .return
+
+.already_hyped
+	ld hl, .TextAlreadyHypedUp
+	; fallthrough
+.print_and_fail
+	call PrintText
+.nope
+	xor a
+.return
+	ldh [hScriptVar], a
+	ret
+
+.MenuHeader:
+	db $40 ; flags
+	db 04, 00 ; start coords
+	db 11, 19 ; end coords
+	dw .MenuData
+	db 1 ; default option
+
+.MenuData:
+	db $a0 ; flags
+	dn 3, 2 ; rows, columns
+	db 8 ; spacing
+	dba .Strings
+	dbw BANK(.MenuData), 0
+
+.Strings:
+	db "HP@"
+	db "Speed@"
+	db "Attack@"
+	db "Spcl.Atk@"
+	db "Defense@"
+	db "Spcl.Def@"
+
+.TrainWhichStat:
+	text "Train which of"
+	line ""
+	text_ram wStringBuffer1
+	text "'s stats?"
+	done
+
+.TextCantTrainEgg:
+	text "An Egg? I get that"
+	line "you're hyped to"
+	cont "have it, but I"
+	cont "can't train it yet!"
+	prompt
+
+.TextNotMaxEffort:
+	text "Oh no… No, no, no!"
+	line ""
+	text_ram wStringBuffer1
+	text " hasn't"
+	cont "maxed their effort"
+	cont "in that stat!"
+	prompt
+
+.TextAlreadyHypedUp:
+	text "But "
+	text_ram wStringBuffer1
+	text " is"
+	line "already hyped up"
+	cont "in that stat!"
+	prompt
+
 GetLastPartyMon:
 	ld a, [wPartyCount]
 	dec a
@@ -1107,11 +916,11 @@ GetLastPartyMon:
 	ret
 
 DepositMonWithDayCareMan:
-	ld de, wBreedMon1Nick
+	ld de, wBreedMon1Nickname
 	jr _DepositBreedmon
 
 DepositMonWithDayCareLady:
-	ld de, wBreedMon2Nick
+	ld de, wBreedMon2Nickname
 
 _DepositBreedmon:
 	ld a, [wCurPartyMon]
@@ -1119,66 +928,47 @@ _DepositBreedmon:
 	call SkipNames
 	rst CopyBytes
 	ld a, [wCurPartyMon]
-	ld hl, wPartyMonOT
+	ld hl, wPartyMonOTs
 	call SkipNames
 	rst CopyBytes
 	ld a, [wCurPartyMon]
 	ld hl, wPartyMon1Species
 	ld bc, PARTYMON_STRUCT_LENGTH
 	rst AddNTimes
-	ld bc, BOXMON_STRUCT_LENGTH
+	ld bc, BREEDMON_STRUCT_LENGTH
 	rst CopyBytes
 	xor a
 	ld [wPokemonWithdrawDepositParameter], a
-	predef_jump RemoveMonFromPartyOrBox
+	predef_jump RemoveMonFromParty
 
 SentPkmnIntoBox:
 ; Sents the Pkmn into one of Bills Boxes
-; the data comes mainly from 'wEnemyMon:'
-	ld a, BANK(sBoxCount)
-	call GetSRAMBank
-	ld de, sBoxCount
-	ld a, [de]
-	cp MONS_PER_BOX
-	jp nc, .full
-	inc a
-	ld [de], a
+; the data comes mainly from wOTPartyMon1
+	farcall NewStorageBoxPointer
+	jr c, .full
+
+	push bc
+	lb bc, $81, 1
+	farcall CopyBetweenPartyAndTemp
 
 	ld a, [wCurPartySpecies]
 	ld [wCurSpecies], a
-	ld c, a
-.loop
-	inc de
-	ld a, [de]
-	ld b, a
-	ld a, c
-	ld c, b
-	ld [de], a
-	inc a
-	jr nz, .loop
-
 	ld hl, wOTPartyMon1Form
 	predef GetVariant
 	call GetBaseData
-	call ShiftBoxMon
 
 	ld hl, wPlayerName
-	ld de, sBoxMonOT
+	ld de, wTempMonOT
 	ld bc, NAME_LENGTH
 	rst CopyBytes
 
 	ld a, [wCurPartySpecies]
-	ld [wd265], a
+	ld [wNamedObjectIndex], a
 	call GetPokemonName
 
-	ld de, sBoxMonNicknames
 	ld hl, wStringBuffer1
+	ld de, wTempMonNickname
 	ld bc, MON_NAME_LENGTH
-	rst CopyBytes
-
-	ld hl, wOTPartyMon1
-	ld de, sBoxMon1
-	ld bc, BOXMON_STRUCT_LENGTH
 	rst CopyBytes
 
 	ld a, [wCurPartySpecies]
@@ -1190,341 +980,27 @@ SentPkmnIntoBox:
 	jr nz, .not_unown
 	farcall UpdateUnownDex
 .not_unown
-
-	ld hl, sBoxMon1Moves
-	ld de, wTempMonMoves
-	ld bc, NUM_MOVES
-	rst CopyBytes
-
-	ld hl, sBoxMon1PP
-	ld de, wTempMonPP
-	ld bc, NUM_MOVES
-	rst CopyBytes
-
-	ld b, 0
-	call RestorePPofDepositedPokemon
-
-	call CloseSRAM
+	pop bc
+	ld a, b
+	ld [wTempMonBox], a
+	ld a, c
+	ld [wTempMonSlot], a
+	farcall UpdateStorageBoxMonFromTemp
 	scf
 	ret
 
 .full
-	call CloseSRAM
 	and a
 	ret
 
-ShiftBoxMon:
-	ld hl, sBoxMonOT
-	ld bc, NAME_LENGTH
-	call .shift
-
-	ld hl, sBoxMonNicknames
-	ld bc, MON_NAME_LENGTH
-	call .shift
-
-	ld hl, sBoxMons
-	ld bc, BOXMON_STRUCT_LENGTH
-
-.shift
-	ld a, [sBoxCount]
-	cp 2
-	ret c
-
-	push hl
-	rst AddNTimes
-	dec hl
-	ld e, l
-	ld d, h
-	pop hl
-
-	ld a, [sBoxCount]
-	dec a
-	rst AddNTimes
-	dec hl
-
-	push hl
-	ld a, [sBoxCount]
-	dec a
-	ld hl, 0
-	rst AddNTimes
-	ld c, l
-	ld b, h
-	pop hl
-.loop
-	ld a, [hld]
-	ld [de], a
-	dec de
-	dec bc
-	ld a, c
-	or b
-	jr nz, .loop
-	ret
-
-GiveEgg::
-	ld a, [wCurPartySpecies]
-	push af
-	farcall GetPreEvolution
-	farcall GetPreEvolution
-	ld a, [wCurPartySpecies]
-	dec a
-
-; TryAddMonToParty sets Seen and Caught flags
-; when it is successful.  This routine will make
-; sure that we aren't newly setting flags.
-	push af
-	call CheckCaughtMon
-	pop af
-	push bc
-	call CheckSeenMon
-	push bc
-
-	predef TryAddMonToParty
-
-	ld a, [wPartyCount]
-	dec a
-	ld hl, wPartyMon1IsEgg
-	call GetPartyLocation
-	ld a, [hl]
-	or IS_EGG_MASK
-	ld [hl], a
-
-; If we haven't caught this Pokemon before receiving
-; the Egg, reset the flag that was just set by
-; TryAddMonToParty.
-	pop bc
-	ld a, c
-	and a
-	jr nz, .skip_caught_flag
-	ld a, [wCurPartySpecies]
-	dec a
-	ld c, a
-	ld d, $0
-	ld hl, wPokedexCaught
-	ld b, RESET_FLAG
-	predef FlagPredef
-
-.skip_caught_flag
-; If we haven't seen this Pokemon before receiving
-; the Egg, reset the flag that was just set by
-; TryAddMonToParty.
-	pop bc
-	ld a, c
-	and a
-	jr nz, .skip_seen_flag
-	ld a, [wCurPartySpecies]
-	dec a
-	ld c, a
-	ld d, $0
-	ld hl, wPokedexSeen
-	ld b, RESET_FLAG
-	predef FlagPredef
-
-.skip_seen_flag
-	pop af
-	ld [wCurPartySpecies], a
-	ld a, [wPartyCount]
-	dec a
-	ld bc, PARTYMON_STRUCT_LENGTH
-	ld hl, wPartyMon1Species
-	rst AddNTimes
-	ld a, [wCurPartySpecies]
-	ld [hl], a
-	ld hl, wPartyCount
-	ld a, [hl]
+RemoveMonFromParty:
+; Done by writing a null entry to the party slot.
 	ld b, 0
-	ld c, a
-	add hl, bc
-	ld a, [wCurPartySpecies]
-	ld [hl], a
-	ld a, [wPartyCount]
-	dec a
-	ld hl, wPartyMonNicknames
-	call SkipNames
-	ld de, String_Egg
-	call CopyName2
-	ld a, [wPartyCount]
-	dec a
-	ld hl, wPartyMon1Happiness
-	ld bc, PARTYMON_STRUCT_LENGTH
-	rst AddNTimes
-	ld a, [wMonStatusFlags]
-	bit 1, a
-	ld a, 1
-	jr nz, .got_init_happiness
-	ld a, [wBaseEggSteps]
-	and $f
+	ld a, [wCurPartyMon]
 	inc a
-	ld b, a
-	add a
-	add a
-	add b
-
-.got_init_happiness
-	ld [hl], a
-	ld a, [wPartyCount]
-	dec a
-	ld hl, wPartyMon1HP
-	ld bc, PARTYMON_STRUCT_LENGTH
-	rst AddNTimes
-	xor a
-	ld [hli], a
-	ld [hl], a
-	and a
-	ret
-
-String_Egg:
-	db "Egg@"
-
-RemoveMonFromPartyOrBox:
-	ld hl, wPartyCount
-
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .okay
-
-	ld a, BANK(sBoxCount)
-	call GetSRAMBank
-	ld hl, sBoxCount
-
-.okay
-	ld a, [hl]
-	dec a
-	ld [hli], a
-	ld a, [wCurPartyMon]
 	ld c, a
-	ld b, 0
-	add hl, bc
-	ld e, l
-	ld d, h
-	inc de
-.loop
-	ld a, [de]
-	inc de
-	ld [hli], a
-	inc a
-	jr nz, .loop
-	ld hl, wPartyMonOT
-	ld d, PARTY_LENGTH - 1
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .party
-	ld hl, sBoxMonOT
-	ld d, MONS_PER_BOX - 1
-
-.party
-	; If this is the last mon in our party (box),
-	; shift all the other mons up to close the gap.
-	ld a, [wCurPartyMon]
-	call SkipNames
-	ld a, [wCurPartyMon]
-	cp d
-	jr nz, .delete_inside
-	ld [hl], -1
-	jp .finish
-
-.delete_inside
-	; Shift the OT names
-	ld d, h
-	ld e, l
-	ld bc, MON_NAME_LENGTH
-	add hl, bc
-	ld bc, wPartyMonNicknames
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .party2
-	ld bc, sBoxMonNicknames
-.party2
-	call CopyDataUntil
-	; Shift the struct
-	ld hl, wPartyMons
-	ld bc, PARTYMON_STRUCT_LENGTH
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .party4
-	ld hl, sBoxMons
-	ld bc, BOXMON_STRUCT_LENGTH
-.party4
-	ld a, [wCurPartyMon]
-	rst AddNTimes
-	ld d, h
-	ld e, l
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .party5
-	ld bc, BOXMON_STRUCT_LENGTH
-	add hl, bc
-	ld bc, sBoxMonOT
-	jr .copy
-
-.party5
-	ld bc, PARTYMON_STRUCT_LENGTH
-	add hl, bc
-	ld bc, wPartyMonOT
-.copy
-	call CopyDataUntil
-	; Shift the nicknames
-	ld hl, wPartyMonNicknames
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .party6
-	ld hl, sBoxMonNicknames
-.party6
-	ld bc, MON_NAME_LENGTH
-	ld a, [wCurPartyMon]
-	rst AddNTimes
-	ld d, h
-	ld e, l
-	ld bc, MON_NAME_LENGTH
-	add hl, bc
-	ld bc, wPartyMonNicknamesEnd
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jr z, .party7
-	ld bc, sBoxMonNicknamesEnd
-.party7
-	call CopyDataUntil
-	; Mail time!
-.finish
-	ld a, [wPokemonWithdrawDepositParameter]
-	and a
-	jp nz, CloseSRAM
-	ld a, [wLinkMode]
-	and a
-	ret nz
-	; Shift mail
-	ld a, BANK(sPartyMail)
-	call GetSRAMBank
-	; If this is the last mon in our party, no need to shift mail.
-	ld hl, wPartyCount
-	ld a, [wCurPartyMon]
-	cp [hl]
-	jr z, .close_sram
-	; Shift our mail messages up.
-	ld hl, sPartyMail
-	ld bc, MAIL_STRUCT_LENGTH
-	rst AddNTimes
-	push hl
-	add hl, bc
-	pop de
-	ld a, [wCurPartyMon]
-	ld b, a
-.loop2
-	push bc
-	push hl
-	ld bc, MAIL_STRUCT_LENGTH
-	rst CopyBytes
-	pop hl
-	push hl
-	ld bc, MAIL_STRUCT_LENGTH
-	add hl, bc
-	pop de
-	pop bc
-	inc b
-	ld a, [wPartyCount]
-	cp b
-	jr nz, .loop2
-.close_sram
-	jp CloseSRAM
+	ld e, 0
+	farjp SetStorageBoxPointer
 
 ComputeNPCTrademonStats:
 	ld a, MON_LEVEL
@@ -1538,7 +1014,7 @@ ComputeNPCTrademonStats:
 	ld a, MON_FORM
 	call GetPartyParamLocation
 	ld a, [hl]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld [wCurForm], a
 	call GetBaseData
 	ld a, MON_MAXHP
@@ -1549,7 +1025,7 @@ ComputeNPCTrademonStats:
 	ld a, MON_EVS - 1
 	call GetPartyParamLocation
 	ld b, TRUE
-	call CalcPkmnStats
+	predef CalcPkmnStats
 	pop de
 	ld a, MON_HP
 	call GetPartyParamLocation
@@ -1569,7 +1045,7 @@ UpdatePkmnStats:
 	ld a, MON_FORM
 	call GetPartyParamLocation
 	ld a, [hl]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld [wCurForm], a
 	call GetBaseData
 	ld a, MON_LEVEL
@@ -1589,7 +1065,7 @@ UpdatePkmnStats:
 	call GetHyperTraining
 	inc a
 	ld b, a
-	call CalcPkmnStats
+	predef CalcPkmnStats
 	ld a, MON_HP
 	call GetPartyParamLocation
 	pop bc
@@ -1640,7 +1116,7 @@ GetHyperTraining:
 
 GetHyperTrainingAddr:
 	ld a, [wCurPartyMon]
-	ld hl, wPartyMonOT
+	ld hl, wPartyMonOTs
 	push bc
 	call SkipNames
 	ld bc, PLAYER_NAME_LENGTH
@@ -1655,7 +1131,7 @@ CalcPkmnStats:
 ; hl is the path to the EVs - 1
 ; de is a pointer where the 6 stats are placed
 
-	ld c, $0
+	ld c, 0
 .loop
 	inc c
 	call CalcPkmnStatC
@@ -1714,10 +1190,8 @@ CalcPkmnStatC:
 	dec c
 	jr nz, .hyper_training_loop
 	pop bc
-	jr nc, .not_hyper_trained
-	ld b, b ;  no-optimize nops (BGB breakpoint; should never run yet)
 	ld a, $f
-	jr .GotDV
+	jr c, .GotDV
 
 .not_hyper_trained
 	ld a, c
@@ -1884,7 +1358,7 @@ CalcPkmnStatC:
 	ldh [hMultiplicand + 1], a
 	ldh a, [hQuotient + 2]
 	ldh [hMultiplicand + 2], a
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 GetNatureStatMultiplier::
 ; a points to Nature
@@ -1934,35 +1408,6 @@ GetNatureStatMultiplier::
 GivePoke::
 	push de
 	push bc
-	xor a ; PARTYMON
-	ld [wMonType], a
-	predef TryAddMonToParty
-	jr nc, .failed
-	ld hl, wPartyMonNicknames
-	ld a, [wPartyCount]
-	dec a
-	ld [wCurPartyMon], a
-	call SkipNames
-	ld d, h
-	ld e, l
-	pop bc
-	ld a, b
-	ld b, 0
-	push bc
-	push de
-	push af
-	ld a, [wCurItem]
-	and a
-	jr z, .done
-	ld a, [wCurPartyMon]
-	ld hl, wPartyMon1Item
-	ld bc, PARTYMON_STRUCT_LENGTH
-	rst AddNTimes
-	ld a, [wCurItem]
-	ld [hl], a
-	jr .done
-
-.failed
 	ld a, [wCurPartySpecies]
 	ld [wEnemyMonSpecies], a
 	xor a
@@ -1972,168 +1417,284 @@ GivePoke::
 	ld [wMonType], a
 	ld [wBattleMode], a
 	predef TryAddMonToParty
-	call SentPkmnIntoBox
-	jp nc, .FailedToGiveMon
-	ld a, BOXMON
-	ld [wMonType], a
+	lb bc, $81, 1
+	farcall CopyBetweenPartyAndTemp
+
 	xor a
-	ld [wCurPartyMon], a
-	ld de, wMonOrItemNameBuffer
-	pop bc
-	ld a, b
-	ld b, 1
-	push bc
-	push de
-	push af
+	ld [wBattleMode], a
+	ld hl, wTempMonItem
 	ld a, [wCurItem]
+	ld [hli], a
+	ld a, [wCurPlayerMove]
 	and a
-	jr z, .no_item
-	ld a, [wCurItem]
-	ld [sBoxMon1Item], a
-.no_item
-	ld a, POKE_BALL
+	jr z, .no_move
+	ld d, h
+	ld e, l
+	ld b, a
+	ld c, NUM_MOVES
+.move_loop
+	ld a, [de]
+	and a
+	jr z, .add_move
+	inc de
+	dec c
+	jr nz, .move_loop
+	ld d, h
+	ld e, l
+.add_move
+	ld a, b
+	ld [de], a
+	ld hl, Moves + MOVE_PP
+	call GetMoveProperty
+	ld hl, MON_PP - MON_MOVES
+	add hl, de
+	ld [hl], a
+
+.no_move
+	pop bc
+	pop hl
+	push bc
+	ld a, b
+	and a
+	jmp nz, .trainer_data
+	ld a, [wTempMonForm]
+	bit MON_IS_EGG_F, a
+	jr z, .not_egg
+	ld de, String_Egg
+	ld hl, wTempMonNickname
+	call CopyName2
+	ld hl, wTempMonHP
+	xor a
+	ld [hli], a
+	ld [hl], a
+	ld a, [wBaseEggSteps]
+	and $f
+	inc a
+	ld b, a
+	add a
+	add a
+	add b
+	ld [wTempMonHappiness], a
+.not_egg
+	ld de, wTempMonNickname
+	ld hl, wMonOrItemNameBuffer
+	call CopyName2
+	ld a, [wGiftMonBall]
 	ld [wCurItem], a
+	ld hl, wTempMonCaughtData
+	farcall SetBoxmonOrEggmonCaughtData
+.try_add
+	call AddTempMonToParty
+	ld d, PARTYMON
+	jr nc, .added
+	call .SetUpBoxMon
+	jmp c, .FailedToGiveMon
+	ld d, BOXMON
 
-.done
+.added
+	push de
 	ld a, [wCurPartySpecies]
-	ld [wd265], a
-	ld [wTempEnemyMonSpecies], a
+	ld [wNamedObjectIndex], a
 	call GetPokemonName
-	ld hl, wStringBuffer1
-	ld de, wMonOrItemNameBuffer
-	ld bc, MON_NAME_LENGTH
-	rst CopyBytes
+	ld a, [wTempMonForm]
+	bit MON_IS_EGG_F, a
+	ld hl, ReceivedGiftEggText
+	jr nz, .received_egg
+	ld hl, ReceivedGiftMonText
+.received_egg
+	push af
+	call PrintText
 	pop af
-	and a
-	jp z, .wildmon
-	pop de
+	push af
+	ld de, SFX_GET_EGG_FROM_DAYCARE_LADY
+	jr nz, .received_egg_sfx
+	ld de, SFX_CAUGHT_MON
+.received_egg_sfx
+	call PlayWaitSFX
+	pop af
 	pop bc
-	pop hl
+	jr nz, .skip_nickname
 	push bc
-	push hl
-	ld a, [wScriptBank]
-	call GetFarHalfword
-	ld bc, MON_NAME_LENGTH
-	ld a, [wScriptBank]
-	call FarCopyBytes
-	pop hl
-	inc hl
-	inc hl
-	ld a, [wScriptBank]
-	call GetFarHalfword
+	farcall GiveANickname_YesNo
 	pop bc
+	jr c, .skip_nickname
+	push bc
+	ld de, wTempMonNickname
 	ld a, b
 	and a
-	push de
-	push bc
-	jr nz, .send_to_box
-
-	push hl
-	ld a, [wCurPartyMon]
-	ld hl, wPartyMonOT
+	jr nz, .got_nick
+	ld hl, wPartyMonNicknames
+	ld a, [wPartyCount]
+	dec a
 	call SkipNames
 	ld d, h
 	ld e, l
-	pop hl
-.otnameloop
-	ld a, [wScriptBank]
-	call GetFarByte
-	ld [de], a
-	inc hl
-	inc de
-	cp "@"
-	jr nz, .otnameloop
-	ld a, [wScriptBank]
-	call GetFarByte
-	ld b, a
-	push bc
-	ld a, [wCurPartyMon]
-	ld hl, wPartyMon1ID
-	ld bc, PARTYMON_STRUCT_LENGTH
-	rst AddNTimes
-	ld a, HIGH(01001)
-	ld [hli], a
-	ld [hl], LOW(01001)
-	pop bc
-	ld a, POKE_BALL
-	ld c, a
-	farcall SetGiftPartyMonCaughtData
-	jr .skip_nickname
-
-.send_to_box
-	ld a, BANK(sBoxMonOT)
-	call GetSRAMBank
-	ld de, sBoxMonOT
-.loop
-	ld a, [wScriptBank]
-	call GetFarByte
-	ld [de], a
-	inc hl
-	inc de
-	cp "@"
-	jr nz, .loop
-	ld a, [wScriptBank]
-	call GetFarByte
-	ld b, a
-	ld a, POKE_BALL
-	ld c, a
-	ld hl, sBoxMon1ID
-	call Random
-	ld [hli], a
-	call Random
-	ld [hl], a
-	call CloseSRAM
-	farcall SetGiftBoxMonCaughtData
-	jr .skip_nickname
-
-.wildmon
-	pop de
-	pop bc
-	push bc
+.got_nick
 	push de
-	ld a, b
-	and a
-	jr z, .party
-	farcall SetBoxMonCaughtData
-	jr .set_caught_data
-
-.party
-	ld a, POKE_BALL
-	ld [wCurItem], a
-	farcall SetCaughtData
-.set_caught_data
-	farcall GiveANickname_YesNo
+	call InitNickname
 	pop de
-	call nc, InitNickname
-
-.skip_nickname
+	ld hl, wMonOrItemNameBuffer
+	call CopyName2
 	pop bc
+.skip_nickname
 	pop de
 	ld a, b
+	inc b
 	and a
 	ret z
-	ld hl, TextJump_WasSentToBillsPC
+	push de
+	farcall UpdateStorageBoxMonFromTemp
+	pop de
+	ld a, d
+	and a
+	ld b, 2
+	ret nz
+
+	farcall CurBoxFullCheck
+	jr z, .box_not_full
+	ld hl, GiftMonBoxFullText
+	push bc
 	call PrintText
-	ld a, BANK(sBoxMonNicknames)
-	call GetSRAMBank
-	ld hl, wMonOrItemNameBuffer
-	ld de, sBoxMonNicknames
+	pop bc
+.box_not_full
+	farcall GetBoxName
+	ld a, [wTempMonForm]
+	bit MON_IS_EGG_F, a
+	ld hl, GiftEggSentToPCText
+	jr nz, .egg_sent
+	ld hl, GiftMonSentToPCText
+.egg_sent
+	jmp PrintText
+
+.trainer_data
+	ld de, wTempMonForm
+	ld a, [wCurForm]
+	ld b, a
+	ld a, [de]
+	and !GENDER_MASK
+	or b
+	ld [de], a
+	push hl
+	ld a, [wScriptBank]
+	ld b, a
+	call GetFarWord
+	ld a, b
+	push bc
+	ld de, wTempMonNickname
 	ld bc, MON_NAME_LENGTH
-	rst CopyBytes
-	call CloseSRAM
-	ld b, $1
-	ret
+	call FarCopyBytes
+	pop bc
+	pop hl
+	inc hl
+	inc hl
+	push hl
+	push bc
+	ld a, b
+	call GetFarWord
+	ld a, b
+	ld de, wTempMonOT
+	ld bc, PLAYER_NAME_LENGTH
+	call FarCopyBytes
+	pop bc
+	pop hl
+	inc hl
+	inc hl
+	ld a, b
+	call GetFarWord
+	push hl
+	ld a, b
+	call GetFarWord
+	ld a, l
+	ld [wTempMonID], a
+	ld a, h
+	ld [wTempMonID+1], a
+	pop hl
+	inc hl
+	inc hl
+	ld a, b
+	call GetFarByte
+	ld b, a
+	ld a, [wGiftMonBall]
+	ld c, a
+	ld hl, wTempMonCaughtData
+	farcall SetGiftMonCaughtData
+	call AddTempMonToParty
+	ld b, PARTYMON
+	jmp nc, .skip_nickname
+	call .SetUpBoxMon
+	ld b, d
+	jmp nc, .skip_nickname
 
 .FailedToGiveMon:
 	pop bc
-	pop de
-	ld b, $2
+	ld b, 0
 	ret
 
-TextJump_WasSentToBillsPC:
-	; was sent to BILL's PC.
-	text_jump Text_WasSentToBillsPC
+.SetUpBoxMon:
+	farcall NewStorageBoxPointer
+	ret c
+	ld a, b
+	ld [wTempMonBox], a
+	ld a, c
+	ld [wTempMonSlot], a
+	ld a, [wTempMonForm]
+	bit MON_IS_EGG_F, a
+	jr nz, .done
+	ld a, [wCurPartySpecies]
+	dec a
+	call SetSeenAndCaughtMon
+	ld a, [wCurPartySpecies]
+	cp UNOWN
+	jr nz, .check_magikarp
+	farcall UpdateUnownDex
+	ld a, [wFirstUnownSeen]
+	and a
+	jr nz, .check_magikarp
+	ld a, [wTempMonForm]
+	and FORM_MASK
+	ld [wFirstUnownSeen], a
+.check_magikarp
+	ld a, [wCurPartySpecies]
+	cp MAGIKARP
+	jr nz, .done
+	ld a, [wFirstMagikarpSeen]
+	and a
+	jr nz, .done
+	ld a, [wTempMonForm]
+	and FORM_MASK
+	ld [wFirstMagikarpSeen], a
+.done
+	ld d, BOXMON
+	and a
+	ret
+
+GiftMonBoxFullText:
+	; @ was full.
+	text_far _CurBoxFullText
 	text_end
+
+ReceivedGiftMonText:
+	; <PLAYER> received @!
+	text_far _ReceivedGiftMonText
+	text_end
+
+GiftMonSentToPCText:
+	; @ was sent to <BOX>.
+	text_far _MonSentToPCText
+	text_end
+
+ReceivedGiftEggText:
+	; <PLAYER> received an egg!
+	text_far _ReceivedEggText
+	text_end
+
+GiftEggSentToPCText:
+	; The Egg was sent to <BOX>.
+	text_far _EggSentToPCText
+	text_end
+
+String_Egg:
+	rawchar "Egg@"
 
 InitNickname:
 	push de
@@ -2146,4 +1707,4 @@ InitNickname:
 	pop hl
 	ld de, wStringBuffer1
 	call InitName
-	jp ExitAllMenus
+	jmp ExitAllMenus

@@ -1,5 +1,3 @@
-HOF_MASTER_COUNT EQU 200
-
 HallOfFame::
 	call HallOfFame_FadeOutMusic
 	farcall InitDisplayForHallOfFame
@@ -26,6 +24,7 @@ HallOfFame::
 	inc [hl]
 .ok
 	farcall SaveGameData
+	farcall SaveCurrentVersion
 	call GetHallOfFameParty
 	farcall AddHallOfFameEntry
 
@@ -68,7 +67,7 @@ HallOfFame_PlayMusicDE:
 	call PlayMusic
 	call DelayFrame
 	pop de
-	jp PlayMusic
+	jmp PlayMusic
 
 AnimateHallOfFame:
 	xor a
@@ -104,7 +103,7 @@ AnimateHallOfFame:
 	ld [wMusicFade], a
 	farcall FadeOutPalettes
 	ld c, 8
-	jp DelayFrames
+	jmp DelayFrames
 
 .DisplayNewHallOfFamer:
 	call DisplayHOFMon
@@ -262,17 +261,7 @@ AnimateHOFMonEntrance:
 	xor a
 	ldh [hBGMapMode], a
 	ldh [hSCY], a
-	jp HOF_SlideFrontpic
-
-HOF_SlideBackpic:
-.backpicloop
-	ldh a, [hSCX]
-	cp $70
-	ret z
-	add $4
-	ldh [hSCX], a
-	call DelayFrame
-	jr .backpicloop
+	; fallthrough
 
 HOF_SlideFrontpic:
 .frontpicloop
@@ -284,6 +273,16 @@ HOF_SlideFrontpic:
 	ldh [hSCX], a
 	call DelayFrame
 	jr .frontpicloop
+
+HOF_SlideBackpic:
+.backpicloop
+	ldh a, [hSCX]
+	cp $70
+	ret z
+	add $4
+	ldh [hSCX], a
+	call DelayFrame
+	jr .backpicloop
 
 _HallOfFamePC:
 	call LoadFontsBattleExtra
@@ -450,7 +449,7 @@ DisplayHOFMon:
 	call Textbox
 	ld a, [wTempMonSpecies]
 	ld [wCurPartySpecies], a
-	ld [wd265], a
+	ld [wTextDecimalByte], a
 	ld hl, wTempMonForm
 	predef GetVariant
 	hlcoord 6, 5
@@ -463,7 +462,7 @@ DisplayHOFMon:
 	ld [hli], a
 	ld [hl], "."
 	hlcoord 3, 13
-	ld de, wd265
+	ld de, wTextDecimalByte
 	lb bc, PRINTNUM_LEADINGZEROS | 1, 3
 	call PrintNum
 	call GetBasePokemonName
@@ -499,7 +498,7 @@ DisplayHOFMon:
 	hlcoord 10, 16
 	ld de, wTempMonID
 	lb bc, PRINTNUM_LEADINGZEROS | 2, 5
-	jp PrintNum
+	jmp PrintNum
 
 HOF_AnimatePlayerPic:
 	call ClearBGPalettes
@@ -572,8 +571,8 @@ HOF_AnimatePlayerPic:
 	ld de, wGameTimeHours
 	lb bc, 2, 3
 	call PrintNum
-	ld [hl], ":"
-	inc hl
+	ld a, ":"
+	ld [hli], a
 	ld de, wGameTimeMinutes
 	lb bc, PRINTNUM_LEADINGZEROS | 1, 2
 	call PrintNum

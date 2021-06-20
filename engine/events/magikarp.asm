@@ -1,4 +1,4 @@
-Special_CheckMagikarpLength:
+CheckMagikarpLength:
 	; Returns 3 if you select a Magikarp that beats the previous record.
 	; Returns 2 if you select a Magikarp, but the current record is longer.
 	; Returns 1 if you press B in the Pokemon selection menu.
@@ -48,7 +48,7 @@ Special_CheckMagikarpLength:
 	ld [de], a
 	inc de
 	ld a, [wCurPartyMon]
-	ld hl, wPartyMonOT
+	ld hl, wPartyMonOTs
 	call SkipNames
 	rst CopyBytes
 	ld a, 3
@@ -72,7 +72,7 @@ Special_CheckMagikarpLength:
 
 .MeasureItText:
 	; Let me measure that MAGIKARP. …Hm, it measures @ .
-	text_jump _MagikarpGuruMeasureText
+	text_far _MagikarpGuruMeasureText
 	text_end
 
 PrintMagikarpLength:
@@ -85,13 +85,13 @@ PrintMagikarpLength:
 	call PrintNum
 	dec hl
 	ld a, [hl]
-	ld [hl], "."
+	ld [hl], "." ; no-optimize *hl++|*hl-- = N
 	inc hl
 	ld [hli], a
-	ld [hl], "c"
-	inc hl
-	ld [hl], "m"
-	inc hl
+	ld a, "c"
+	ld [hli], a
+	ld a, "m"
+	ld [hli], a
 	ld [hl], "@"
 	ret
 
@@ -156,13 +156,13 @@ PrintMagikarpLength:
 	ld de, wMagikarpLengthMmHi
 	lb bc, PRINTNUM_LEFTALIGN | 1, 2
 	call PrintNum
-	ld [hl], "′"
-	inc hl
+	ld a, "′"
+	ld [hli], a
 	ld de, wMagikarpLengthMmLo
 	lb bc, PRINTNUM_LEFTALIGN | 1, 2
 	call PrintNum
-	ld [hl], "″"
-	inc hl
+	ld a, "″"
+	ld [hli], a
 	ld [hl], "@"
 	ret
 
@@ -249,7 +249,7 @@ CalcMagikarpLength:
 
 	ld hl, MagikarpLengths
 	ld a, 2
-	ld [wd265], a
+	ld [wTempByteValue], a
 
 .read
 	ld a, [hli]
@@ -278,7 +278,7 @@ CalcMagikarpLength:
 	ldh [hMultiplicand + 1], a
 	ld a, 100
 	ldh [hMultiplicand + 2], a
-	ld a, [wd265]
+	ld a, [wTempByteValue]
 	ldh [hMultiplier], a
 	call Multiply
 	ld b, 0
@@ -292,9 +292,9 @@ CalcMagikarpLength:
 
 .next
 	inc hl ; align to next triplet
-	ld a, [wd265]
+	ld a, [wTempByteValue]
 	inc a
-	ld [wd265], a
+	ld [wTempByteValue], a
 	cp 16
 	jr c, .read
 
@@ -368,9 +368,9 @@ Special_MagikarpHouseSign:
 	ld [wMagikarpLengthMmLo], a
 	call PrintMagikarpLength
 	ld hl, .CurrentRecordtext
-	jp PrintText
+	jmp PrintText
 
 .CurrentRecordtext:
 	; "CURRENT RECORD"
-	text_jump _KarpGuruRecordText
+	text_far _KarpGuruRecordText
 	text_end

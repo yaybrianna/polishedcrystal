@@ -41,9 +41,7 @@ AI_Basic:
 	push de
 	push bc
 	ld hl, .statusonlyeffects
-	ld de, 1
-	call IsInArray
-
+	call IsInByteArray
 	pop bc
 	pop de
 	pop hl
@@ -174,7 +172,7 @@ AI_Types:
 	pop bc
 	pop hl
 
-	ld a, [wd265]
+	ld a, [wTypeMatchup]
 	and a
 	jr z, .immune
 
@@ -182,7 +180,7 @@ AI_Types:
 	call AI_IsFixedDamageMove
 	jr c, .checkmove
 
-	ld a, [wd265]
+	ld a, [wTypeMatchup]
 	cp $10 ; 1.0
 	jr z, .checkmove
 	jr c, .noteffective
@@ -240,10 +238,9 @@ AI_IsFixedDamageMove:
 	push hl
 	push de
 	push bc
-	ld de, 1
 	ld hl, .FixedDamageMoves
-	call IsInArray
-	jp PopBCDEHL
+	call IsInByteArray
+	jmp PopBCDEHL
 
 .FixedDamageMoves:
 	db EFFECT_COUNTER
@@ -329,6 +326,10 @@ AI_Smart:
 
 .smart_ai_table
 	dbw EFFECT_SLEEP,             AI_Smart_Sleep
+	dbw EFFECT_SPEED_UP,          AI_Smart_SpeedControl
+	dbw EFFECT_SPEED_UP_2,        AI_Smart_SpeedControl
+	dbw EFFECT_SPEED_DOWN,        AI_Smart_SpeedControl
+	dbw EFFECT_SPEED_DOWN_2,      AI_Smart_SpeedControl
 	dbw EFFECT_LEECH_HIT,         AI_Smart_LeechHit
 	dbw EFFECT_EXPLOSION,         AI_Smart_Explosion
 	dbw EFFECT_DREAM_EATER,       AI_Smart_DreamEater
@@ -415,9 +416,9 @@ AI_Smart_LeechHit:
 	pop hl
 
 ; 60% chance to discourage this move if not very effective.
-	ld a, [wd265]
-	cp 10 ; 1.0
-	jr c, .asm_38815
+	ld a, [wTypeMatchup]
+	cp BASE_AI_SWITCH_SCORE
+	jr c, .discourage
 
 ; Do nothing if effectiveness is neutral.
 	ret z
@@ -433,7 +434,7 @@ AI_Smart_LeechHit:
 	dec [hl]
 	ret
 
-.asm_38815
+.discourage
 	call Random
 	cp 100
 	ret c
@@ -492,7 +493,7 @@ AI_Smart_EvasionUp:
 ; Dismiss this move if enemy's evasion can't raise anymore.
 	ld a, [wEnemyEvaLevel]
 	cp $d
-	jp nc, AIDiscourageMove
+	jmp nc, AIDiscourageMove
 
 ; If enemy's HP is full...
 	call AICheckEnemyMaxHP
@@ -620,7 +621,7 @@ AI_Smart_AccuracyDown:
 	call AICheckPlayerMaxHP
 	jr nc, .asm_389a0
 
-; ...and enemy's HP is above 50%...
+; ...and enemy's HP is below 50%...
 	call AICheckEnemyHalfHP
 	jr nc, .asm_389a0
 
@@ -764,7 +765,7 @@ AI_Smart_Roar:
 	push hl
 	farcall CheckPlayerMoveTypeMatchups
 	ld a, [wEnemyAISwitchScore]
-	cp 10 ; neutral
+	cp BASE_AI_SWITCH_SCORE
 	pop hl
 	ret c
 	inc [hl]
@@ -943,7 +944,7 @@ AI_Smart_Fly:
 AI_Smart_TrickRoom:
 ; Greatly encourage this move if it would make us outspeed, discourage otherwise
 	call AICompareSpeed
-	jp c, AIDiscourageMove
+	jmp c, AIDiscourageMove
 
 	; Avoid obvious PP stall by only encouraging the move if setting TR up
 	ld a, [wTrickRoom]
@@ -1009,7 +1010,7 @@ AI_Smart_Substitute:
 
 	call AICheckEnemyHalfHP
 	ret c
-	jp AIDiscourageMove
+	jmp AIDiscourageMove
 
 AI_Smart_HyperBeam:
 	call AICheckEnemyHalfHP
@@ -1123,17 +1124,17 @@ AI_Smart_Counter:
 
 AI_Smart_Encore:
 	call AICompareSpeed
-	jr nc, .asm_38c81
+	jr nc, .discourage
 
 	ld a, [wLastPlayerMove]
 	and a
-	jp z, AIDiscourageMove
+	jmp z, AIDiscourageMove
 
 	call AIGetEnemyMove
 
 	ld a, [wEnemyMoveStruct + MOVE_POWER]
 	and a
-	jr z, .asm_38c68
+	jr z, .weakmove
 
 	push hl
 	call SetPlayerTurn
@@ -1141,24 +1142,23 @@ AI_Smart_Encore:
 	call SetEnemyTurn
 
 	pop hl
-	ld a, [wd265]
+	ld a, [wTypeMatchup]
 	cp $a
-	jr nc, .asm_38c68
+	jr nc, .weakmove
 
 	and a
 	ret nz
-	jr .asm_38c78
+	jr .encourage
 
-.asm_38c68
+.weakmove
 	push hl
 	ld a, [wPlayerSelectedMove]
 	ld hl, .EncoreMoves
-	ld de, 1
-	call IsInArray
+	call IsInByteArray
 	pop hl
-	jr nc, .asm_38c81
+	jr nc, .discourage
 
-.asm_38c78
+.encourage
 	call Random
 	cp $46
 	ret c
@@ -1166,7 +1166,7 @@ AI_Smart_Encore:
 	dec [hl]
 	ret
 
-.asm_38c81
+.discourage
 	inc [hl]
 	inc [hl]
 	inc [hl]
@@ -1230,7 +1230,7 @@ AI_Smart_SleepTalk:
 	ld a, [wEnemyMonStatus]
 	and $7
 	cp b
-	jp c, AIDiscourageMove
+	jmp c, AIDiscourageMove
 
 	; encourage it a ton to override everything else
 	ld a, [hl]
@@ -1300,7 +1300,7 @@ AI_Smart_HealBell:
 	ld a, [wEnemyMonStatus]
 	and a
 	ret nz
-	jp AIDiscourageMove
+	jmp AIDiscourageMove
 
 AI_Smart_PriorityHit:
 	call AICompareSpeed
@@ -1309,7 +1309,7 @@ AI_Smart_PriorityHit:
 ; Dismiss this move if the player is flying or underground.
 	ld a, [wPlayerSubStatus3]
 	and 1 << SUBSTATUS_FLYING | 1 << SUBSTATUS_UNDERGROUND
-	jp nz, AIDiscourageMove
+	jmp nz, AIDiscourageMove
 
 ; Greatly encourage this move if it will KO the player.
 	ld a, $1
@@ -1340,8 +1340,7 @@ AI_Smart_Disable:
 	push hl
 	ld a, [wPlayerSelectedMove]
 	ld hl, UsefulMoves
-	ld de, 1
-	call IsInArray
+	call IsInByteArray
 
 	pop hl
 	jr nc, .asm_38dee
@@ -1371,10 +1370,10 @@ AI_Smart_MeanLook:
 	push hl
 	call AICheckLastPlayerMon
 	pop hl
-	jp z, AIDiscourageMove
+	jmp z, AIDiscourageMove
 
 	call CheckIfTargetIsGhostType
-	jp z, AIDiscourageMove
+	jmp z, AIDiscourageMove
 
 ; 80% chance to greatly encourage this move if the player is badly poisoned
 	ld a, [wBattleMonStatus]
@@ -1394,7 +1393,7 @@ AI_Smart_MeanLook:
 	push hl
 	farcall CheckPlayerMoveTypeMatchups
 	ld a, [wEnemyAISwitchScore]
-	cp $b ; not very effective
+	cp BASE_AI_SWITCH_SCORE + 1
 	pop hl
 	ret nc
 
@@ -1447,81 +1446,36 @@ endr
 	ret
 
 AI_Smart_Curse:
-	ld a, [wEnemyMonType1]
-	cp GHOST
-	jr z, .ghostcurse
-	ld a, [wEnemyMonType2]
-	cp GHOST
-	jr z, .ghostcurse
+; Don't bother with the non-Ghost version, the setup layer takes care of it.
+	call CheckIfUserIsGhostType
+	ret nz
 
-	call AICheckEnemyHalfHP
-	jr nc, .asm_38e93
-
-	ld a, [wEnemyAtkLevel]
-	cp $b
-	jr nc, .asm_38e93
-	cp $9
-	ret nc
-
-	ld a, [wBattleMonType1]
-	cp GHOST
-	jr z, .asm_38e92
-	call AI_80_20
-	ret c
-	dec [hl]
-	dec [hl]
-	ret
-
-.asm_38e90
-	inc [hl]
-	inc [hl]
-.asm_38e92
-	inc [hl]
-.asm_38e93
-	inc [hl]
-	ret
-
-.ghostcurse
 	ld a, [wPlayerSubStatus1]
 	bit SUBSTATUS_CURSE, a
-	jp nz, AIDiscourageMove
+	jmp nz, AIDiscourageMove
 
 	push hl
 	farcall CheckAnyOtherAliveEnemyMons
 	pop hl
-	jr nc, .asm_38eb0
+	jr z, .last_enemy
 
+	; Encourage the move a bit.
+	dec [hl]
+
+.last_enemy
 	push hl
-	call AICheckLastPlayerMon
+	farcall AI_OpponentCanSwitch
 	pop hl
-	jr nz, .asm_38e90
+	jr nz, .player_cant_switch
 
-	jr .asm_38eb7
+	; Discourage the move a bit.
+	inc [hl]
 
-.asm_38eb0
-	push hl
-	call AICheckLastPlayerMon
-	pop hl
-	jr z, .asm_38ecb
-
-.asm_38eb7
+.player_cant_switch
 	call AICheckEnemyQuarterHP
-	jp nc, .asm_38e90
-
-	call AICheckEnemyHalfHP
-	jr nc, .asm_38e92
-
-	call AICheckEnemyMaxHP
-	ret nc
-
-	ld a, [wPlayerTurnsTaken]
-	and a
-	ret nz
-
-.asm_38ecb
-	call AI_50_50
 	ret c
 
+	; AI has 1/4HP or less, so encourage the move.
 	dec [hl]
 	dec [hl]
 	ret
@@ -1899,7 +1853,7 @@ AI_Smart_Weather:
 	; Discourage if redundant
 	ld a, [wBattleWeather]
 	cp b
-	jp z, AIDiscourageMove
+	jmp z, AIDiscourageMove
 
 	; Encourage on neutral weather
 	dec [hl]
@@ -2156,6 +2110,7 @@ AICheckPlayerHalfHP:
 	ret
 
 AICheckEnemyHalfHP:
+; Returns carry if enemy has more than 50%HP left.
 	push hl
 	push de
 	push bc
@@ -2171,7 +2126,7 @@ AICheckEnemyHalfHP:
 	cp c
 	ld a, [hl]
 	sbc b
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 AICheckEnemyQuarterHP:
 	push hl
@@ -2191,7 +2146,7 @@ AICheckEnemyQuarterHP:
 	cp c
 	ld a, [hl]
 	sbc b
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 AICheckPlayerQuarterHP:
 	push hl
@@ -2271,7 +2226,7 @@ AIHasMoveInArray:
 	scf
 
 .done
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 UsefulMoves:
 ; Moves that are usable all-around.
@@ -2333,8 +2288,7 @@ AI_Opportunist:
 	push de
 	push bc
 	ld hl, .stallmoves
-	ld de, 1
-	call IsInArray
+	call IsInByteArray
 
 	pop bc
 	pop de
@@ -2484,7 +2438,7 @@ AI_Aggressive:
 	pop hl
 	ld a, [wTypeMatchup]
 	and a
-	jp z, AIDiscourageMove
+	call z, AIDiscourageMove
 
 	; If we made it this far, discourage this move.
 	inc [hl]
@@ -2512,9 +2466,8 @@ AIDamageCalc:
 	jr z, .return
 	cp EFFECT_REVERSAL
 	jr z, .reversal
-	ld de, 1
 	ld hl, .ConstantDamageEffects
-	call IsInArray
+	call IsInByteArray
 	jr nc, .regular_damage
 	farcall BattleCommand_constantdamage
 	farjp BattleCommand_resettypematchup
@@ -2602,8 +2555,7 @@ AI_Cautious:
 	push de
 	push bc
 	ld hl, .residualmoves
-	ld de, 1
-	call IsInArray
+	call IsInByteArray
 
 	pop bc
 	pop de
@@ -2734,7 +2686,7 @@ AI_Status:
 	pop bc
 	pop de
 	pop hl
-	ld a, [wd265]
+	ld a, [wTypeMatchup]
 	and a
 	jr z, .pop_and_discourage
 
@@ -2774,7 +2726,7 @@ AI_Status:
 .nextmove
 	pop de
 	pop bc
-	jp .checkmove
+	jmp .checkmove
 
 AI_Risky:
 ; Use any move that will KO the target.
@@ -2802,14 +2754,13 @@ AI_Risky:
 	and a
 	jr z, .nextmove
 
-; Don't use risky moves at max hp.
+; Don't use risky moves at 50%+ HP.
 	ld a, [wEnemyMoveStruct + MOVE_EFFECT]
-	ld de, 1
 	ld hl, .RiskyMoves
-	call IsInArray
+	call IsInByteArray
 	jr nc, .checkko
 
-	call AICheckEnemyMaxHP
+	call AICheckEnemyHalfHP
 	jr c, .nextmove
 
 ; Else, 80% chance to exclude them.
@@ -2846,6 +2797,11 @@ endr
 	db EFFECT_EXPLOSION
 	db $ff
 
+AI_Smart_SpeedControl:
+; Discourage if we outspeed
+	call AICompareSpeed
+	ret nc
+	; fallthrough
 AIDiscourageMove:
 	ld a, [hl]
 	add 10
@@ -2859,7 +2815,7 @@ AIGetEnemyMove:
 	push bc
 	ld de, wEnemyMoveStruct
 	call GetFixedMoveStruct
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 AI_80_20:
 	call Random

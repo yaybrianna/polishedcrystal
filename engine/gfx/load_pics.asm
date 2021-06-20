@@ -5,7 +5,7 @@ GetVariant:
 
 ; Return CurForm based on Form at hl
 	ld a, [hl]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	jr nz, .ok
 
 	ld a, [wCurPartySpecies]
@@ -40,7 +40,7 @@ GetVariant:
 ; hl is ...MonForm
 
 	ld a, [hl]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	cp PIKACHU_RED_FORM
 	jr nc, .use_form
 
@@ -84,7 +84,25 @@ GetFrontpic:
 	call _GetFrontpic
 	pop af
 	ldh [rSVBK], a
-	jp CloseSRAM
+	jmp CloseSRAM
+
+PrepareFrontpic:
+	ld a, [wCurPartySpecies]
+	ld [wCurSpecies], a
+	and a
+	ret z
+	ldh a, [rSVBK]
+	push af
+	call _PrepareFrontpic
+	pop af
+	ldh [rSVBK], a
+	jmp CloseSRAM
+
+GetPreparedFrontpic:
+	ld a, BANK(sScratch)
+	call GetSRAMBank
+	call _GetPreparedFrontpic
+	jmp CloseSRAM
 
 FrontpicPredef:
 	ld a, [wCurPartySpecies]
@@ -103,9 +121,22 @@ FrontpicPredef:
 	ldh [rVBK], a
 	pop af
 	ldh [rSVBK], a
-	jp CloseSRAM
+	jmp CloseSRAM
 
 _GetFrontpic:
+	call _PrepareFrontpic
+	; fallthrough
+_GetPreparedFrontpic:
+	push hl
+	ld de, sScratch + 1 tiles
+	ld c, 7 * 7
+	ldh a, [hROMBank]
+	ld b, a
+	call Get2bpp
+	pop hl
+	ret
+
+_PrepareFrontpic:
 	ld a, BANK(sScratch)
 	call GetSRAMBank
 	push de
@@ -117,9 +148,7 @@ _GetFrontpic:
 	call GetFrontpicPointer
 	ld a, BANK(wDecompressScratch)
 	ldh [rSVBK], a
-	ld a, b
-	ld de, wDecompressScratch
-	call FarDecompress
+	call FarDecompressInB
 	; Save decompressed size
 	swap e
 	swap d
@@ -131,13 +160,6 @@ _GetFrontpic:
 	ld hl, sScratch + 1 tiles
 	ld de, wDecompressScratch
 	call PadFrontpic
-	pop hl
-	push hl
-	ld de, sScratch + 1 tiles
-	ld c, 7 * 7
-	ldh a, [hROMBank]
-	ld b, a
-	call Get2bpp
 	pop hl
 	ret
 
@@ -160,7 +182,7 @@ endr
 	push af
 	inc hl
 	ld a, BANK(FrontPicPointers)
-	call GetFarHalfword
+	call GetFarWord
 	pop bc
 	ret
 
@@ -224,7 +246,7 @@ GetAnimatedFrontpic:
 	ld a, [sScratch]
 	ld c, a
 .no_overflow
-	jp Get2bpp
+	jmp Get2bpp
 
 LoadFrontpicTiles:
 	ld hl, wDecompressScratch
@@ -284,8 +306,7 @@ endr
 	push af
 	inc hl
 	ld a, BANK(BackPicPointers)
-	call GetFarHalfword
-	ld de, wDecompressScratch
+	call GetFarWord
 	pop af
 	call FarDecompress
 	ld hl, wDecompressScratch
@@ -304,7 +325,7 @@ GetTrainerPic:
 	ld a, [wTrainerClass]
 	and a
 	ret z
-	cp NUM_TRAINER_CLASSES
+	cp NUM_TRAINER_CLASS_PICS + 1
 	ret nc
 	call ApplyTilemapInVBlank
 	xor a
@@ -324,10 +345,9 @@ GetTrainerPic:
 	push af
 	inc hl
 	ld a, BANK(TrainerPicPointers)
-	call GetFarHalfword
+	call GetFarWord
 	pop af
 _Decompress7x7Pic:
-	ld de, wDecompressScratch
 	call FarDecompress
 	pop hl
 	ld de, wDecompressScratch
@@ -361,7 +381,7 @@ GetPaintingPic:
 	push af
 	inc hl
 	ld a, BANK(PaintingPicPointers)
-	call GetFarHalfword
+	call GetFarWord
 	pop af
 	jr _Decompress7x7Pic
 
@@ -424,11 +444,9 @@ PadFrontpic:
 
 .six
 	ld c, 7 tiles
-	xor a
 	call .Fill
 .six_loop
 	ld c, 1 tiles
-	xor a
 	call .Fill
 	ld c, 6 tiles
 	call LoadFrontpic
@@ -438,24 +456,23 @@ PadFrontpic:
 
 .five
 	ld c, 7 tiles
-	xor a
 	call .Fill
 .five_loop
 	ld c, 2 tiles
-	xor a
 	call .Fill
 	ld c, 5 tiles
 	call LoadFrontpic
 	dec b
 	jr nz, .five_loop
 	ld c, 7 tiles
-	xor a
 	; fallthrough
 
 .Fill:
+	xor a
+.fill_loop
 	ld [hli], a
 	dec c
-	jr nz, .Fill
+	jr nz, .fill_loop
 	ret
 
 LoadFrontpic:

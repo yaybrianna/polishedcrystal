@@ -54,7 +54,7 @@ Museum1FFossilScientistScript:
 	writetext AskHelixFossilText
 	yesorno
 	iftrue ResurrectHelixFossil
-	jump .maybe_later
+	sjump .maybe_later
 
 .own_dome
 	checkitem OLD_AMBER
@@ -62,7 +62,7 @@ Museum1FFossilScientistScript:
 	writetext AskDomeFossilText
 	yesorno
 	iftrue ResurrectDomeFossil
-	jump .maybe_later
+	sjump .maybe_later
 
 .own_helix_and_dome
 	checkitem OLD_AMBER
@@ -72,13 +72,13 @@ Museum1FFossilScientistScript:
 	closewindow
 	ifequal $1, ResurrectHelixFossil
 	ifequal $2, ResurrectDomeFossil
-	jump .maybe_later
+	sjump .maybe_later
 
 .ask_old_amber
 	writetext AskOldAmberText
 	yesorno
 	iftrue ResurrectOldAmber
-	jump .maybe_later
+	sjump .maybe_later
 
 .ask_helix_amber
 	loadmenu HelixAmberMenuDataHeader
@@ -86,7 +86,7 @@ Museum1FFossilScientistScript:
 	closewindow
 	ifequal $1, ResurrectHelixFossil
 	ifequal $2, ResurrectOldAmber
-	jump .maybe_later
+	sjump .maybe_later
 
 .ask_dome_amber
 	loadmenu DomeAmberMenuDataHeader
@@ -94,7 +94,7 @@ Museum1FFossilScientistScript:
 	closewindow
 	ifequal $1, ResurrectDomeFossil
 	ifequal $2, ResurrectOldAmber
-	jump .maybe_later
+	sjump .maybe_later
 
 .ask_helix_dome_amber
 	loadmenu HelixDomeAmberMenuDataHeader
@@ -164,36 +164,23 @@ HelixDomeAmberMenuDataHeader:
 	db "Cancel@"
 
 ResurrectHelixFossil:
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, NoRoomForFossilPokemon
 	takeitem HELIX_FOSSIL
 	scall ResurrectAFossilScript
-	writetext GotOmanyteText
-	playsound SFX_CAUGHT_MON
-	waitsfx
 	givepoke OMANYTE, 20
-	jumpopenedtext TakeGoodCareOfItText
+	sjump FinishResurrect
 
 ResurrectDomeFossil:
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, NoRoomForFossilPokemon
 	takeitem DOME_FOSSIL
 	scall ResurrectAFossilScript
-	writetext GotKabutoText
-	playsound SFX_CAUGHT_MON
-	waitsfx
 	givepoke KABUTO, 20
-	jumpopenedtext TakeGoodCareOfItText
+	sjump FinishResurrect
 
 ResurrectOldAmber:
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, NoRoomForFossilPokemon
 	takeitem OLD_AMBER
 	scall ResurrectAFossilScript
-	writetext GotAerodactylText
-	playsound SFX_CAUGHT_MON
-	waitsfx
 	givepoke AERODACTYL, 20
+FinishResurrect:
+	iffalse_jumpopenedtext NoRoomForFossilPokemonText
 	jumpopenedtext TakeGoodCareOfItText
 
 ResurrectAFossilScript:
@@ -217,11 +204,8 @@ ResurrectAFossilScript:
 	opentext
 	end
 
-NoRoomForFossilPokemon:
-	jumpopenedtext NoRoomForFossilPokemonText
-
 Museum1FReceptionistScript:
-	checkcode VAR_FACING
+	readvar VAR_FACING
 	ifequal DOWN, .Sneak
 	ifequal LEFT, .Sneak
 	jumpthistextfaceplayer
@@ -381,22 +365,8 @@ ResurrectingPokemonText:
 NoRoomForFossilPokemonText:
 	text "Hey! You can't"
 	line "carry another"
-	cont "#mon."
-	done
-
-GotOmanyteText:
-	text "<PLAYER> received"
-	line "Omanyte."
-	done
-
-GotKabutoText:
-	text "<PLAYER> received"
-	line "Kabuto."
-	done
-
-GotAerodactylText:
-	text "<PLAYER> received"
-	line "Aerodactyl."
+	cont "#mon, and your"
+	cont "box is full, too!"
 	done
 
 TakeGoodCareOfItText:

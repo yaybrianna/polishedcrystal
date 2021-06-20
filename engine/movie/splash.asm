@@ -94,10 +94,10 @@ GameFreakPresentsInit:
 	ld hl, SPRITEANIMSTRUCT_YOFFSET
 	add hl, bc
 	ld [hl], 160
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	ld [hl], 96
-	ld hl, SPRITEANIMSTRUCT_0D
+	ld hl, SPRITEANIMSTRUCT_VAR2
 	add hl, bc
 	ld [hl], 48
 	xor a
@@ -111,14 +111,14 @@ GameFreakPresentsInit:
 	ld a, 144
 	ldh [hWY], a
 	lb de, %11100100, %11100100
-	jp DmgToCgbObjPals
+	jmp DmgToCgbObjPals
 
 GameFreakPresentsEnd:
 	call ClearSpriteAnims
 	call ClearTileMap
 	call ClearSprites
 	ld c, 16
-	jp DelayFrames
+	jmp DelayFrames
 
 PlaceGameFreakPresents:
 	call StandardStackJumpTable
@@ -128,11 +128,6 @@ PlaceGameFreakPresents:
 	dw GameFreakPresents_PlaceGameFreak
 	dw GameFreakPresents_PlacePresents
 	dw GameFreakPresents_WaitForTimer
-
-GameFreakPresents_NextScene:
-	ld hl, wJumptableIndex
-	inc [hl]
-	ret
 
 GameFreakPresents_PlaceGameFreak:
 	ld hl, wIntroSceneTimer
@@ -144,19 +139,13 @@ GameFreakPresents_PlaceGameFreak:
 
 .PlaceGameFreak:
 	ld [hl], 0
-	ld hl, .GAME_FREAK
+	ld hl, Splash_GameFreakTiles
 	decoord 5, 10
-	ld bc, .end - .GAME_FREAK
+	ld bc, Splash_GameFreakTiles.end - Splash_GameFreakTiles
 	rst CopyBytes
 	call GameFreakPresents_NextScene
 	ld de, SFX_GAME_FREAK_PRESENTS
-	jp PlaySFX
-
-.GAME_FREAK:
-	;  G  A  M  E   _  F  R  E  A  K
-	db 0, 1, 2, 3, 13, 4, 5, 3, 1, 6
-.end
-	db "@"
+	jmp PlaySFX
 
 GameFreakPresents_PlacePresents:
 	ld hl, wIntroSceneTimer
@@ -168,16 +157,25 @@ GameFreakPresents_PlacePresents:
 
 .place_presents
 	ld [hl], 0
-	ld hl, .presents
+	ld hl, Splash_PresentsTiles
 	decoord 7, 11
-	ld bc, .end - .presents
+	ld bc, Splash_PresentsTiles.end - Splash_PresentsTiles
 	rst CopyBytes
-	jp GameFreakPresents_NextScene
+	; fallthrough
 
-.presents
+GameFreakPresents_NextScene:
+	ld hl, wJumptableIndex
+	inc [hl]
+	ret
+
+Splash_GameFreakTiles:
+	;  G  A  M  E   _  F  R  E  A  K
+	db 0, 1, 2, 3, 13, 4, 5, 3, 1, 6
+.end
+
+Splash_PresentsTiles:
 	db 7, 8, 9, 10, 11, 12
 .end
-	db "@"
 
 GameFreakPresents_WaitForTimer:
 	ld hl, wIntroSceneTimer
@@ -216,7 +214,7 @@ GameFreakLogo_Bounce:
 ; By default, this is twice, with a height of 96 pixels and 48 pixels.
 ; Sine offset starts at 48 (32+32/2, or pi+pi/2), so it starts at the maximum
 ; value of the sine wave (i.e. the top of the screen).
-	ld hl, SPRITEANIMSTRUCT_0C ; jump height
+	ld hl, SPRITEANIMSTRUCT_VAR1 ; jump height
 	add hl, bc
 	ld a, [hl]
 	and a
@@ -224,7 +222,7 @@ GameFreakLogo_Bounce:
 
 ; Load the sine offset, make sure it doesn't reach the negative part of the wave
 	ld d, a
-	ld hl, SPRITEANIMSTRUCT_0D ; sine offset
+	ld hl, SPRITEANIMSTRUCT_VAR2 ; sine offset
 	add hl, bc
 	ld a, [hl]
 	and $3f ; full circle = 2*pi = 2*32
@@ -238,7 +236,7 @@ GameFreakLogo_Bounce:
 	ld [hl], a
 
 ; Decrement the sine offset
-	ld hl, SPRITEANIMSTRUCT_0D ; sine offset
+	ld hl, SPRITEANIMSTRUCT_VAR2 ; sine offset
 	add hl, bc
 	ld a, [hl]
 	dec [hl]
@@ -246,26 +244,26 @@ GameFreakLogo_Bounce:
 	ret nz
 
 ; If the ditto's reached the ground, decrement the jump height and play the sfx
-	ld hl, SPRITEANIMSTRUCT_0C ; jump height
+	ld hl, SPRITEANIMSTRUCT_VAR1 ; jump height
 	add hl, bc
 	ld a, [hl]
 	sub 48
 	ld [hl], a
 	ld de, SFX_DITTO_BOUNCE
-	jp PlaySFX
+	jmp PlaySFX
 
 .done
 	ld hl, SPRITEANIMSTRUCT_JUMPTABLE_INDEX
 	add hl, bc
 	inc [hl]
-	ld hl, SPRITEANIMSTRUCT_0D ; sine offset
+	ld hl, SPRITEANIMSTRUCT_VAR2 ; sine offset
 	add hl, bc
 	ld [hl], 0
 	ld de, SFX_DITTO_POP_UP
-	jp PlaySFX
+	jmp PlaySFX
 
 GameFreakLogo_Ditto:
-	ld hl, SPRITEANIMSTRUCT_0D ; frame count
+	ld hl, SPRITEANIMSTRUCT_VAR2 ; frame count
 	add hl, bc
 	ld a, [hl]
 	cp 32
@@ -277,14 +275,14 @@ GameFreakLogo_Ditto:
 	ld hl, SPRITEANIMSTRUCT_JUMPTABLE_INDEX
 	add hl, bc
 	inc [hl]
-	ld hl, SPRITEANIMSTRUCT_0D
+	ld hl, SPRITEANIMSTRUCT_VAR2
 	add hl, bc
 	ld [hl], 0
 	ld de, SFX_DITTO_TRANSFORM
-	jp PlaySFX
+	jmp PlaySFX
 
 GameFreakLogo_Transform:
-	ld hl, SPRITEANIMSTRUCT_0D
+	ld hl, SPRITEANIMSTRUCT_VAR2
 	add hl, bc
 	ld a, [hl]
 	cp 64
@@ -317,7 +315,7 @@ GameFreakLogo_Transform:
 	ld hl, SPRITEANIMSTRUCT_JUMPTABLE_INDEX
 	add hl, bc
 	inc [hl]
-	jp GameFreakPresents_NextScene
+	jmp GameFreakPresents_NextScene
 
 GameFreakLogoPalettes:
 ; Ditto's color as it turns into the Game Freak logo.

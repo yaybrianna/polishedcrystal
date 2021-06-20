@@ -30,18 +30,16 @@ RandyScript:
 	writetext Route35GoldenrodGateRandyAskTakeThisMonToMyFriendText
 	yesorno
 	iffalse .refused
-	writetext Route35GoldenrodGateRandyThanksText
-	buttonsound
-	waitsfx
-	checkcode VAR_PARTYCOUNT
+	readvar VAR_PARTYCOUNT
 	ifequal PARTY_LENGTH, .partyfull
+	writetext Route35GoldenrodGateRandyThanksText
+	promptbutton
+	waitsfx
 	writetext Route35GoldenrodGatePlayerReceivedAMonWithMailText
 	playsound SFX_KEY_ITEM
 	waitsfx
-	givepoke FARFETCH_D, NO_FORM, 10, NO_ITEM, TRUE, GiftFarfetch_dName, GiftFarfetch_dOTName
-	givepokeitem GiftFarfetch_dMail
-	writebyte NEST_BALL
-	special SetLastPartyMonBall
+	givepoke FARFETCH_D, FEMALE | NO_FORM, 10, NO_ITEM, NET_BALL, NO_MOVE, TRUE, GiftFarfetch_dName, GiftFarfetch_dOTName, GiftFarfetch_dOTIDAndCaughtGender
+	givepokemail GiftFarfetch_dMail
 	setevent EVENT_GOT_KENYA
 .alreadyhavekenya
 	jumpopenedtext Route35GoldenrodGateRandyWeirdTreeBlockingRoadText
@@ -54,7 +52,7 @@ RandyScript:
 
 .questcomplete
 	writetext Route35GoldenrodGateRandySomethingForYourTroubleText
-	buttonsound
+	promptbutton
 	verbosegiveitem HP_UP
 	iffalse .bagfull
 	setevent EVENT_GOT_HP_UP_FROM_RANDY
@@ -75,7 +73,9 @@ GiftFarfetch_dName:
 GiftFarfetch_dOTName:
 	rawchar "Randy@"
 
-	db 0
+GiftFarfetch_dOTIDAndCaughtGender:
+	bigdw 01001
+	db MALE
 
 Route35GoldenrodGatePokefanFScript:
 	faceplayer

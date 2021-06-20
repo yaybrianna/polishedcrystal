@@ -10,7 +10,7 @@ Special::
 	ld h, [hl]
 	ld l, a
 	ld a, b
-	jp FarCall_hl
+	jmp FarCall_hl
 
 INCLUDE "data/events/special_pointers.asm"
 
@@ -34,14 +34,14 @@ Special_GameCornerPrizeMonCheckDex:
 	call SetSeenAndCaughtMon
 	call FadeToMenu
 	ldh a, [hScriptVar]
-	ld [wd265], a
+	ld [wNamedObjectIndex], a
 	farcall NewPokedexEntry
-	jp ExitAllMenus
+	jmp ExitAllMenus
 
 SpecialSeenMon:
 	ldh a, [hScriptVar]
 	dec a
-	jp SetSeenMon
+	jmp SetSeenMon
 
 Special_FindThatSpecies:
 	ldh a, [hScriptVar]
@@ -74,7 +74,7 @@ SpecialNameRival:
 	; default to "Silver"
 	ld hl, wRivalName
 	ld de, .DefaultRivalName
-	jp InitName
+	jmp InitName
 
 .DefaultRivalName:
 	db "Silver@"
@@ -86,7 +86,7 @@ SpecialTrendyPhrase:
 	; default to "Nothing"
 	ld hl, wTrendyPhrase
 	ld de, .DefaultTrendyPhrase
-	jp InitName
+	jmp InitName
 
 .DefaultTrendyPhrase:
 	db "Nothing@"
@@ -97,12 +97,12 @@ SpecialNameRater:
 Special_TownMap:
 	call FadeToMenu
 	farcall _TownMap
-	jp ExitAllMenus
+	jmp ExitAllMenus
 
 Special_DisplayLinkRecord:
 	call FadeToMenu
 	farcall DisplayLinkRecord
-	jp ExitAllMenus
+	jmp ExitAllMenus
 
 Special_PlayersHousePC:
 	xor a
@@ -154,7 +154,7 @@ Special_UnownPuzzle:
 	farcall UnownPuzzle
 	ld a, [wSolvedUnownPuzzle]
 	ldh [hScriptVar], a
-	jp ExitAllMenus
+	jmp ExitAllMenus
 
 Special_SlotMachine:
 	call Special_CheckCoins
@@ -189,7 +189,7 @@ Special_StartGameCornerGame:
 	ld l, a
 	pop af
 	call FarCall_hl
-	jp ExitAllMenus
+	jmp ExitAllMenus
 
 Special_CheckCoins:
 	ld hl, wCoins
@@ -217,13 +217,22 @@ Special_CheckCoins:
 
 .NoCoinsText:
 	; You have no coins.
-	text_jump _NoCoinsText
+	text_far _NoCoinsText
 	text_end
 
 .NoCoinCaseText:
 	; You don't have a COIN CASE.
-	text_jump _NoCoinCaseText
+	text_far _NoCoinCaseText
 	text_end
+
+SpecialCheckPokerus:
+; Check if a monster in your party has Pokerus
+	farcall CheckPokerus
+	jr ScriptReturnCarry
+
+Special_CheckLuckyNumberShowFlag:
+	farcall CheckLuckyNumberShowFlag
+	; fallthrough
 
 ScriptReturnCarry:
 	jr c, .carry
@@ -258,20 +267,11 @@ StoreSwarmMapIndices::
 	ld [wYanmaMapNumber], a
 	ret
 
-SpecialCheckPokerus:
-; Check if a monster in your party has Pokerus
-	farcall CheckPokerus
-	jp ScriptReturnCarry
-
 Special_ResetLuckyNumberShowFlag:
 	farcall RestartLuckyNumberCountdown
 	ld hl, wLuckyNumberShowFlag
 	res 0, [hl]
 	farjp LoadOrRegenerateLuckyIDNumber
-
-Special_CheckLuckyNumberShowFlag:
-	farcall CheckLuckyNumberShowFlag
-	jp ScriptReturnCarry
 
 SpecialSnorlaxAwake:
 ; Check if the Poké Flute channel is playing.
@@ -291,7 +291,7 @@ SpecialSnorlaxAwake:
 
 PlayCurMonCry:
 	ld a, [wCurPartySpecies]
-	jp PlayCry
+	jmp PlayCry
 
 Special_FadeOutMusic:
 	xor a ; MUSIC_NONE
@@ -304,7 +304,7 @@ Special_FadeOutMusic:
 Diploma:
 	call FadeToMenu
 	farcall _Diploma
-	jp ExitAllMenus
+	jmp ExitAllMenus
 
 Special_GetOvercastIndex::
 	call GetOvercastIndex
@@ -474,60 +474,13 @@ RespawnRoamingSuicune:
 	ret
 
 BillBoxSwitchCheck:
-	ld a, [wCurBox]
-	cp NUM_BOXES - 1
-	jr nz, .notbox14
-	ld a, -1
-.notbox14
-	inc a
-.billboxloop
-	inc a
-	ld c, a
-	push af
-	farcall GetBoxCountWithC
-	cp MONS_PER_BOX
-	jr nz, .foundspace
-	pop af
-	dec a
-	cp NUM_BOXES - 1
-	jr nz, .notlastbox
-	ld a, -1
-.notlastbox
-	inc a
-	ld c, a
-	ld a, [wCurBox]
-	cp c
-	ld a, c
-	jr nz, .billboxloop
-	xor a
+; Returns 0 if our storage system box-wise is completely full, 1 otherwise.
+	farcall NewStorageBoxPointer
+	ld b, 1
+	jr nc, .ok
+	jr nz, .ok
+	dec b
+.ok
+	ld a, b
 	ldh [hScriptVar], a
 	ret
-
-.foundspace
-	pop af
-	dec a
-	ldh [hScriptVar], a
-	ld [wTempScriptBuffer], a
-	ret
-
-BillBoxSwitch:
-	; back up wMisc to wDecompressScratch
-	ld hl, wMisc
-	ld de, wDecompressScratch
-	ld bc, (wMiscEnd - wMisc)
-	ld a, BANK(wDecompressScratch)
-	call FarCopyWRAM
-	; change boxes (overwrites wMisc)
-	ld a, [wTempScriptBuffer]
-	ld e, a
-	farcall ChangeBoxSaveGame
-	; a = carry (didn't save) ? FALSE : TRUE
-	sbc a
-	inc a
-	ldh [hScriptVar], a
-	; restore wMisc from wDecompressScratch
-	ld hl, wDecompressScratch
-	ld de, wMisc
-	ld bc, (wMiscEnd - wMisc)
-	ld a, BANK(wDecompressScratch)
-	jp FarCopyWRAM

@@ -38,21 +38,21 @@ DragonsDenB1FSilverCallback:
 	checkevent EVENT_BEAT_RIVAL_IN_MT_MOON
 	iftrue .CheckDay
 	disappear DRAGONSDENB1F_SILVER
-	return
+	endcallback
 
 .CheckDay:
 	checkevent EVENT_GOT_RIVALS_EGG
 	iffalse .AppearSilver
-	checkcode VAR_WEEKDAY
+	readvar VAR_WEEKDAY
 	ifequal TUESDAY, .AppearSilver
 	ifequal THURSDAY, .AppearSilver
 	ifequal SATURDAY, .AppearSilver
 	disappear DRAGONSDENB1F_SILVER
-	return
+	endcallback
 
 .AppearSilver:
 	appear DRAGONSDENB1F_SILVER
-	return
+	endcallback
 
 DragonsDenB1FClairTrigger:
 	appear DRAGONSDENB1F_CLAIR
@@ -66,11 +66,11 @@ DragonsDenB1FClairTrigger:
 	applymovement DRAGONSDENB1F_CLAIR, .WalksToYouMovement
 	opentext
 	writetext .GiveTMText
-	buttonsound
+	promptbutton
 	verbosegivetmhm TM_DRAGON_PULSE
 	setevent EVENT_GOT_TM59_DRAGON_PULSE
 	writetext .DescribeDragonPulseText
-	buttonsound
+	promptbutton
 	writetext ClairPokemonLeagueDirectionsText ; in BlackthornGym1F.asm
 	waitbutton
 	closetext
@@ -140,26 +140,22 @@ DragonsDenB1FSilverScript:
 	writetext .Training1Text
 	waitbutton
 	writetext .GiveEggText
-	buttonsound
-	checkcode VAR_PARTYCOUNT
-	ifequal PARTY_LENGTH, .PartyFull
+	promptbutton
 	checkevent EVENT_GOT_TOTODILE_FROM_ELM
 	iftrue .GiveChikoritaEgg
 	checkevent EVENT_GOT_CHIKORITA_FROM_ELM
 	iftrue .GiveCyndaquilEgg
-	giveegg TOTODILE, EGG_LEVEL
-	jump .GotRivalsEgg
+	giveegg TOTODILE
+	sjump .GotRivalsEgg
 
 .GiveChikoritaEgg:
-	giveegg CHIKORITA, EGG_LEVEL
-	jump .GotRivalsEgg
+	giveegg CHIKORITA
+	sjump .GotRivalsEgg
 
 .GiveCyndaquilEgg:
-	giveegg CYNDAQUIL, EGG_LEVEL
+	giveegg CYNDAQUIL
 .GotRivalsEgg
-	farwritetext _ReceivedEggText ; in text/common_1.asm
-	playsound SFX_GET_EGG_FROM_DAYCARE_LADY
-	waitsfx
+	iffalse .PartyAndBoxFull 
 	writetext .DescribeEggText
 	waitbutton
 	closetext
@@ -169,8 +165,8 @@ DragonsDenB1FSilverScript:
 	special RestartMapMusic
 	end
 
-.PartyFull:
-	writetext .PartyFullText
+.PartyAndBoxFull:
+	writetext .PartyAndBoxFullText
 	waitbutton
 	closetext
 	special RestartMapMusic
@@ -211,9 +207,10 @@ DragonsDenB1FSilverScript:
 	line "my way."
 	done
 
-.PartyFullText:
+.PartyAndBoxFullText:
 	text "Humph. You don't"
 	line "have any room…"
+	cont "Even in your box…"
 	done
 
 .Training1Text:

@@ -354,7 +354,7 @@ SleepHit:
 	supereffectivetext
 	postfainteffects
 	posthiteffects
-	sleeptarget
+	sleep
 	endmove
 
 FreezeHit:
@@ -809,7 +809,7 @@ Spore:
 	checkpowder
 	bounceback
 	checksafeguard
-	sleeptarget
+	sleep
 	endmove
 
 DoFreeze:
@@ -1311,7 +1311,7 @@ Roar:
 	hastarget
 	checkhit
 	bounceback
-	forceswitch
+	roar
 	endmove
 
 SkillSwap:
@@ -1512,6 +1512,7 @@ Disable:
 	hastarget
 	checkhit
 	bounceback
+	failuretext
 	disable
 	endmove
 
@@ -1536,6 +1537,7 @@ Encore:
 	hastarget
 	checkhit
 	bounceback
+	failuretext
 	encore
 	endmove
 

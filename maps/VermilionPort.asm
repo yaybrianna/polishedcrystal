@@ -6,14 +6,15 @@ VermilionPort_MapScriptHeader:
 	def_callbacks
 
 	def_warp_events
-	warp_event  9,  5, VERMILION_PORT_PASSAGE, 5
+	warp_event  8,  4, VERMILION_CITY, 8
 	warp_event  7, 17, FAST_SHIP_1F, 1
+	warp_event  9,  4, VERMILION_CITY, 9
 
 	def_coord_events
 	coord_event  7, 11, 0, VermilionPortWalkUpToShipScript
 
 	def_bg_events
-	bg_event 16, 13, BGEVENT_ITEM + IRON, EVENT_VERMILION_PORT_HIDDEN_IRON
+	bg_event 27, 13, BGEVENT_ITEM + IRON, EVENT_VERMILION_PORT_HIDDEN_IRON
 
 	def_object_events
 	object_event  7, 17, SPRITE_SAILOR, SPRITEMOVEDATA_STANDING_UP, 0, 0, -1, -1, 0, OBJECTTYPE_SCRIPT, 0, VermilionPortSailorAtGangwayScript, EVENT_VERMILION_PORT_SAILOR_AT_GANGWAY
@@ -25,7 +26,7 @@ VermilionPort_MapScriptHeader:
 	const VERMILIONPORT_SAILOR2
 
 VermilionPortTrigger1:
-	priorityjump UnknownScript_0x74da6
+	sdefer UnknownScript_0x74da6
 VermilionPortTrigger0:
 	end
 
@@ -88,7 +89,7 @@ VermilionPortWalkUpToShipScript:
 	iftrue UnknownScript_0x74e86
 	turnobject PLAYER, LEFT
 	opentext
-	checkcode VAR_WEEKDAY
+	readvar VAR_WEEKDAY
 	ifequal MONDAY, UnknownScript_0x74e72
 	ifequal TUESDAY, UnknownScript_0x74e72
 	ifequal THURSDAY, UnknownScript_0x74e7c
@@ -98,7 +99,7 @@ VermilionPortWalkUpToShipScript:
 	yesorno
 	iffalse VermilionPortNotRidingMoveAwayScript
 	writetext VermilionPortAskTicketText
-	buttonsound
+	promptbutton
 	checkkeyitem S_S_TICKET
 	iffalse UnknownScript_0x74e68
 	writetext VermilionPortSSTicketText
@@ -106,7 +107,7 @@ VermilionPortWalkUpToShipScript:
 	closetext
 	setevent EVENT_TEMPORARY_UNTIL_MAP_RELOAD_2
 	applymovement PLAYER, VermilionPortApproachFastShipMovement
-	jump VermilionPortSailorAtGangwayScript
+	sjump VermilionPortSailorAtGangwayScript
 
 UnknownScript_0x74e68:
 	writetext VermilionPortNoTicketText
@@ -147,7 +148,7 @@ VermilionPortSailorScript:
 	opentext
 	checkevent EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1
 	iftrue VermilionPortAlreadyRodeScript
-	checkcode VAR_WEEKDAY
+	readvar VAR_WEEKDAY
 	ifequal MONDAY, UnknownScript_0x74eda
 	ifequal TUESDAY, UnknownScript_0x74eda
 	ifequal THURSDAY, UnknownScript_0x74ee0
@@ -157,7 +158,7 @@ VermilionPortSailorScript:
 	yesorno
 	iffalse VermilionPortNotRidingScript
 	writetext VermilionPortAskTicketText
-	buttonsound
+	promptbutton
 	checkkeyitem S_S_TICKET
 	iffalse UnknownScript_0x74ed4
 	writetext VermilionPortSSTicketText
@@ -165,7 +166,7 @@ VermilionPortSailorScript:
 	closetext
 	setevent EVENT_TEMPORARY_UNTIL_MAP_RELOAD_2
 	applymovement PLAYER, VermilionPortApproachFastShipRightMovement
-	jump VermilionPortSailorAtGangwayScript
+	sjump VermilionPortSailorAtGangwayScript
 
 UnknownScript_0x74ed4:
 	jumpopenedtext VermilionPortNoTicketText

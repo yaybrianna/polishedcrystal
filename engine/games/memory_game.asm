@@ -39,7 +39,7 @@ _MemoryGame:
 	ld a, $e4
 	call DmgToCgbBGPals
 	ld a, $e0
-	jp DmgToCgbObjPal0
+	jmp DmgToCgbObjPal0
 
 .JumptableLoop:
 	ld a, [wJumptableIndex]
@@ -101,7 +101,7 @@ endr
 	call MemoryGame_Card2Coord
 	xor a
 	ld [wMemoryGameLastCardPicked], a
-	jp MemoryGame_PlaceCard
+	jmp MemoryGame_PlaceCard
 
 .spawn_object
 	depixel 6, 3, 4, 4
@@ -285,7 +285,7 @@ MemoryGame_CheckMatch:
 	add hl, de
 	call MemoryGame_PlaceCard
 	ld hl, .VictoryText
-	jp PrintText
+	jmp PrintText
 
 .no_match
 	xor a
@@ -300,10 +300,10 @@ MemoryGame_CheckMatch:
 	call MemoryGame_PlaceCard
 
 	ld hl, MemoryGameText_Darn
-	jp PrintText
+	jmp PrintText
 
 .VictoryText:
-	start_asm
+	text_asm
 	push bc
 	hlcoord 2, 13
 	call MemoryGame_PlaceCard
@@ -316,12 +316,12 @@ MemoryGame_CheckMatch:
 
 MemoryGameText_Yeah:
 	; , yeah!
-	text_jump _MemoryGameYeahText
+	text_far _MemoryGameYeahText
 	text_end
 
 MemoryGameText_Darn:
 	; Darn…
-	text_jump _MemoryGameDarnText
+	text_far _MemoryGameDarnText
 	text_end
 
 MemoryGame_InitBoard:
@@ -426,7 +426,7 @@ MemoryGame_PlaceCard:
 	inc a
 	ld [hl], a
 	ld c, 3
-	jp DelayFrames
+	jmp DelayFrames
 
 MemoryGame_DeleteCard:
 	ld a, $1
@@ -437,7 +437,7 @@ MemoryGame_DeleteCard:
 	ld [hli], a
 	ld [hl], a
 	ld c, 3
-	jp DelayFrames
+	jmp DelayFrames
 
 MemoryGame_InitStrings:
 	hlcoord 0, 0
@@ -451,7 +451,7 @@ MemoryGame_InitStrings:
 	ld de, .japstr2
 	rst PlaceString
 	ld hl, EmptyString
-	jp PrintText
+	jmp PrintText
 
 .japstr1
 	db "№.Cards@"
@@ -514,7 +514,7 @@ MemoryGame_InterpretJoypad_AnimateCursor:
 	ret
 
 .pressed_a
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	ld a, [hl]
 	inc a
@@ -529,7 +529,7 @@ MemoryGame_InterpretJoypad_AnimateCursor:
 	ret z
 	sub 1 tiles
 	ld [hl], a
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	dec [hl]
 	ret
@@ -542,7 +542,7 @@ MemoryGame_InterpretJoypad_AnimateCursor:
 	ret z
 	add 1 tiles
 	ld [hl], a
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	inc [hl]
 	ret
@@ -555,7 +555,7 @@ MemoryGame_InterpretJoypad_AnimateCursor:
 	ret z
 	sub 1 tiles
 	ld [hl], a
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	ld a, [hl]
 	sub 9
@@ -570,7 +570,7 @@ MemoryGame_InterpretJoypad_AnimateCursor:
 	ret z
 	add 1 tiles
 	ld [hl], a
-	ld hl, SPRITEANIMSTRUCT_0C
+	ld hl, SPRITEANIMSTRUCT_VAR1
 	add hl, bc
 	ld a, [hl]
 	add 9

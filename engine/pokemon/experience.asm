@@ -2,7 +2,7 @@ CalcLevel:
 	ld a, [wTempMonSpecies]
 	ld [wCurSpecies], a
 	ld a, [wTempMonForm]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld [wCurForm], a
 	call GetBaseData
 	ld d, 1
@@ -172,6 +172,6 @@ CalcExpAtLevel:
 	ld a, d
 	ldh [hMultiplicand + 2], a
 	ldh [hMultiplier], a
-	jp Multiply
+	jmp Multiply
 
 INCLUDE "data/growth_rates.asm"

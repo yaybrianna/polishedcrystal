@@ -7,10 +7,7 @@ wDefaultSpawnpoint:: db
 
 UNION
 ; mon buffer
-wBufferMonNick:: ds MON_NAME_LENGTH
-wBufferMonOT:: ds NAME_LENGTH
-wBufferMon:: party_struct wBufferMon
-	ds 8
+	ds 78
 wMonOrItemNameBuffer:: ds NAME_LENGTH
 
 NEXTU
@@ -52,6 +49,8 @@ wTownMapCursorLandmark:: db
 wTownMapCursorObjectPointer:: dw
 NEXTU
 wTownMapCursorCoordinates:: dw
+wStartFlypoint:: db
+wEndFlypoint:: db
 ENDU
 
 NEXTU
@@ -69,10 +68,6 @@ wOaksPkmnTalkSegmentCounter:: db
 	ds 5
 wRadioText:: ds 2 * SCREEN_WIDTH
 wRadioTextEnd::
-
-NEXTU
-; lucky number show
-wLuckyNumberDigitsBuffer:: ds 5
 
 NEXTU
 ; movement buffer data
@@ -100,6 +95,11 @@ NEXTU
 wSwitchItemBuffer:: ds 2 ; may store 1 or 2 bytes
 
 NEXTU
+; Some trade stuff. Needs to be seperate from wSwitchMonBuffer.
+wCurTradePartyMon:: db
+wCurOTTradePartyMon:: db
+wBufferTrademonNickname:: ds MON_NAME_LENGTH
+
 ; switching pokemon in party
 ; may store NAME_LENGTH, PARTYMON_STRUCT_LENGTH, or MAIL_STRUCT_LENGTH bytes
 wSwitchMonBuffer:: ds 48
@@ -107,16 +107,6 @@ wSwitchMonBuffer:: ds 48
 NEXTU
 ; giving pokemon mail
 wMonMailMessageBuffer:: ds MAIL_MSG_LENGTH + 1
-
-NEXTU
-; bill's pc
-UNION
-wBoxNameBuffer:: ds BOX_NAME_LENGTH
-NEXTU
-	ds 1
-wBillsPCTempListIndex:: db
-wBillsPCTempBoxCount:: db
-ENDU
 
 NEXTU
 ; prof. oak's pc
@@ -132,11 +122,6 @@ wNumOwnedDecoCategories:: db
 wOwnedDecoCategories:: ds 16
 ENDU
 
-NEXTU
-; trade
-wCurTradePartyMon:: db
-wCurOTTradePartyMon:: db
-wBufferTrademonNick:: ds MON_NAME_LENGTH
 
 NEXTU
 ; link battle record data
@@ -164,12 +149,7 @@ wKeepSevenBiasChance::
 wTempDayOfWeek::
 	db
 
-	ds 2 ; unused
-
-wStartFlypoint:: db
-wEndFlypoint:: db
-
-	ds 55
+	ds 59
 
 UNION
 ; trainer data
@@ -310,14 +290,14 @@ wBattleBerriesPocketScrollPosition:: db
 
 wTMHMMoveNameBackup:: ds MOVE_NAME_LENGTH
 
-wStringBuffer1:: ds 24
-wStringBuffer2:: ds 19
-wStringBuffer3:: ds 19
+wStringBuffer1:: ds STRING_BUFFER_LENGTH + 5
+wStringBuffer2:: ds STRING_BUFFER_LENGTH
+wStringBuffer3:: ds STRING_BUFFER_LENGTH
 
 UNION
 ; mostly used for the phone, Buffer4 is also used in some overworld events
-wStringBuffer4:: ds 19
-wStringBuffer5:: ds 19
+wStringBuffer4:: ds STRING_BUFFER_LENGTH
+wStringBuffer5:: ds STRING_BUFFER_LENGTH
 NEXTU
 wAIMoves:: ds 4 ; enemy moves excluding unusable moves
 wAIMoveScore:: ds 4 ; score for each move
@@ -327,8 +307,11 @@ NEXTU
 ; It's only moved here as part of battle initialization, mostly.
 ; Thus, it's OK for it to reuse other WRAM space.
 wBT_PartySelectCounter:: db
+wBT_OpponentTypeArray:: ; fits within a party length.
 wBT_PartySelections:: ds PARTY_LENGTH
-wBT_OTMonParty:: ds BATTLETOWER_PARTYDATA_SIZE
+wBT_MonParty:: ds BATTLETOWER_PARTYDATA_SIZE
+wBT_SecondaryMonParty:: ds BATTLETOWER_PARTYDATA_SIZE ; last rental trainer
+wBT_OTMonParty:: ds BATTLETOWER_PARTYDATA_SIZE ; also for starting rental setup
 ENDU
 
 wBattleMenuCursorBuffer:: dw
@@ -408,8 +391,6 @@ wMailboxItems:: ds MAILBOX_CAPACITY
 wMailboxEnd:: db
 ENDU
 
-	ds 5 ; unused
-
 wCurIconMonHasItemOrMail:: db
 
 wCurKeyItem::
@@ -418,6 +399,7 @@ wCurItem::
 	db
 wMartItemID::
 wCurItemQuantity::
+wGiftMonBall::
 	db
 
 wCurPartySpecies:: db
@@ -449,8 +431,6 @@ wSpriteFlags::
 	db
 
 wHandlePlayerStep:: db
-
-	ds 1
 
 wPartyMenuActionText:: db
 
@@ -489,11 +469,22 @@ wBGMapAnchor:: dw
 
 wOldTileset:: db
 
+UNION
 wTempMon:: party_struct wTempMon
-wTempMonOT:: ds NAME_LENGTH
 wTempMonNickname:: ds MON_NAME_LENGTH
+wTempMonOT:: ds PLAYER_NAME_LENGTH
+wTempMonExtra::
+wTempMonHyperTraining:: db
+	ds 2 ; the other 2 extra bytes
+NEXTU
+wEncodedTempMon:: savemon_struct wEncodedTempMon
+ENDU
 
-	ds 41 ; unused
+; Points towards box + slot if using GetStorageBoxMon. Slot set to 0 if empty.
+wTempMonBox:: db
+wTempMonSlot:: db
+
+	ds 39 ; unused
 
 wOverworldMapAnchor:: dw
 wMetatileStandingY:: db
@@ -687,29 +678,22 @@ wPutativeTMHMMove:: db
 wForgettingMove:: db
 wTotalBattleTurns:: db
 
-; TODO: apply imported wd265 labels to appropriate locations
-wNamedObjectIndexBuffer::
-wDeciramBuffer::
+wNamedObjectIndex::
+wTextDecimalByte::
 wTempByteValue::
 wNumSetBits::
 wTypeMatchup::
-wCurType::
 wTempSpecies::
 wTempIconSpecies::
+wTempKeyItem::
 wTempTMHM::
 wTempPP::
-wNextBoxOrPartyIndex::
 wChosenCableClubRoom::
 wBreedingCompatibility::
 wMoveGrammar::
 wApplyStatLevelMultipliersToEnemy::
 wUsePPUp::
-; TODO: which of our own wd265 labels override the above labels and vice versa?
-wCurKeyItemBuffer::
-wCurTMHMBuffer::
-wFoundMatchingIDInParty::
-wd265::
-; usually 1 byte, may be up to 3 in some cases for wNamedObjectIndexBuffer
+wFoundMatchingID::
 	ds 3
 
 wMonTriedToEvolve:: db
@@ -735,24 +719,28 @@ wOTPlayerID:: dw
 wOTPartyCount:: db
 wOTPartySpecies:: ds PARTY_LENGTH + 1 ; legacy scripts don't check PartyCount
 
-; OT party data -- OTPartyMon1 and nicknames is always available (nicknames available because DudeBag doesn't extend very far)
-wOTPartyMons::
-wOTPartyMon1:: party_struct wOTPartyMon1
 
 UNION
-; OTPartymon2-6 (and OTs/nicknames)
-wOTPartyMon2:: party_struct wOTPartyMon2
-wOTPartyMon3:: party_struct wOTPartyMon3
-wOTPartyMon4:: party_struct wOTPartyMon4
-wOTPartyMon5:: party_struct wOTPartyMon5
-wOTPartyMon6:: party_struct wOTPartyMon6
+wOTPartyMons::
+for n, 1, PARTY_LENGTH + 1
+wOTPartyMon{d:n}:: party_struct wOTPartyMon{d:n}
+endr
 
-wOTPartyMonsEnd::
-wOTPartyMonOT:: ds NAME_LENGTH * PARTY_LENGTH
-wOTPartyMonNicknames:: ds MON_NAME_LENGTH * PARTY_LENGTH ; make sure this is always available!
+wOTPartyMonOTs::
+for n, 1, PARTY_LENGTH + 1
+wOTPartyMon{d:n}OT:: ds PLAYER_NAME_LENGTH
+wOTPartyMon{d:n}Extra:: ds 3
+endr
+
+wOTPartyMonNicknames::
+for n, 1, PARTY_LENGTH + 1
+wOTPartyMon{d:n}Nickname:: ds MON_NAME_LENGTH
+endr
 wOTPartyDataEnd::
 
 NEXTU
+	ds 48
+
 ; catch tutorial dude bag
 wDudeBag::
 wDudeNumItems:: db
@@ -779,7 +767,7 @@ wMapEventStatus::
 
 wScriptFlags::
 wScriptFlags1::
-; bit 3: priority jump
+; bit 3: run deferred script
 	db
 wScriptFlags2::
 	db
@@ -800,10 +788,10 @@ wScriptStackSize:: db
 wScriptStack:: ds 3 * 12
 wScriptDelay:: db
 
-wPriorityScriptBank::
+wDeferredScriptBank::
 wScriptTextBank::
 	db
-wPriorityScriptAddr::
+wDeferredScriptAddr::
 wScriptTextAddr::
 	dw
 
@@ -906,49 +894,26 @@ wFollowMovementQueue:: ds 5
 
 wObjectStructs::
 wPlayerStruct::   object_struct wPlayer
-wObject1Struct::  object_struct wObject1
-wObject2Struct::  object_struct wObject2
-wObject3Struct::  object_struct wObject3
-wObject4Struct::  object_struct wObject4
-wObject5Struct::  object_struct wObject5
-wObject6Struct::  object_struct wObject6
-wObject7Struct::  object_struct wObject7
-wObject8Struct::  object_struct wObject8
-wObject9Struct::  object_struct wObject9
-wObject10Struct:: object_struct wObject10
-wObject11Struct:: object_struct wObject11
-wObject12Struct:: object_struct wObject12
+for n, 1, NUM_OBJECT_STRUCTS ; discount player
+wObject{d:n}Struct:: object_struct wObject{d:n}
+endr
 wObjectStructsEnd::
 
 wStoneTableAddress:: dw
 
 wBattleTowerCurStreak:: dw
 wBattleTowerTopStreak:: dw
+wBattleFactoryCurStreak:: dw
+wBattleFactoryTopStreak:: dw
+wBattleFactorySwapCount:: db ; Amount of swaps performed.
 
-	ds 18
+	ds 13 ; unused
 
 wMapObjects::
 wPlayerObject:: map_object wPlayer
-wMap1Object::   map_object wMap1
-wMap2Object::   map_object wMap2
-wMap3Object::   map_object wMap3
-wMap4Object::   map_object wMap4
-wMap5Object::   map_object wMap5
-wMap6Object::   map_object wMap6
-wMap7Object::   map_object wMap7
-wMap8Object::   map_object wMap8
-wMap9Object::   map_object wMap9
-wMap10Object::  map_object wMap10
-wMap11Object::  map_object wMap11
-wMap12Object::  map_object wMap12
-wMap13Object::  map_object wMap13
-wMap14Object::  map_object wMap14
-wMap15Object::  map_object wMap15
-wMap16Object::  map_object wMap16
-wMap17Object::  map_object wMap17
-wMap18Object::  map_object wMap18
-wMap19Object::  map_object wMap19
-wMap20Object::  map_object wMap20
+for n, 1, NUM_OBJECTS ; discount player
+wMap{d:n}Object:: map_object wMap{d:n}
+endr
 wMapObjectsEnd::
 
 wObjectMasks:: ds NUM_OBJECTS
@@ -1064,10 +1029,8 @@ wFarfetchdPosition:: db
 ; map triggers
 wAlways0SceneID:: db
 wAzaleaTownSceneID:: db
-wBattleTower1FSceneID:: db
-wBattleTowerBattleRoomSceneID:: db ; unused
-wBattleTowerElevatorSceneID:: db ; unused
-wBattleTowerHallwaySceneID:: db ; unused
+wBattleFacilitySceneID:: db
+	ds 3 ; unused
 wBattleTowerOutsideSceneID:: db
 wBellchimeTrailSceneID:: db
 wBrunosRoomSceneID:: db
@@ -1186,8 +1149,8 @@ wErinFightCount::    db
 wEventFlags:: flag_array NUM_EVENTS
 
 wCurBox:: db
-wBoxNames:: ds BOX_NAME_LENGTH * NUM_BOXES
-wBoxNamesEnd::
+
+	ds 126 ; unused
 
 wCelebiEvent:: db
 
@@ -1280,7 +1243,7 @@ wPoisonStepCount:: db
 
 wPhoneList:: ds CONTACT_LIST_SIZE + 1
 
-wHappinessStepCount:: db
+	ds 1 ; unused
 
 wParkBallsRemaining::
 wSafariBallsRemaining:: db
@@ -1334,16 +1297,22 @@ wPartySpecies:: ds PARTY_LENGTH
 wPartyEnd::     db ; older code doesn't check wPartyCount
 
 wPartyMons::
-wPartyMon1:: party_struct wPartyMon1
-wPartyMon2:: party_struct wPartyMon2
-wPartyMon3:: party_struct wPartyMon3
-wPartyMon4:: party_struct wPartyMon4
-wPartyMon5:: party_struct wPartyMon5
-wPartyMon6:: party_struct wPartyMon6
+for n, 1, PARTY_LENGTH + 1
+wPartyMon{d:n}:: party_struct wPartyMon{d:n}
+endr
 
-wPartyMonOT:: ds NAME_LENGTH * PARTY_LENGTH
+wPartyMonOTs::
+for n, 1, PARTY_LENGTH + 1
+wPartyMon{d:n}OT:: ds PLAYER_NAME_LENGTH
+wPartyMon{d:n}Extra::
+wPartyMon{d:n}HyperTraining:: db
+	ds 2 ; the other 2 extra bytes
+endr
 
-wPartyMonNicknames:: ds MON_NAME_LENGTH * PARTY_LENGTH
+wPartyMonNicknames::
+for n, 1, PARTY_LENGTH + 1
+wPartyMon{d:n}Nickname:: ds MON_NAME_LENGTH
+endr
 wPartyMonNicknamesEnd::
 
 	ds 9 ; unused
@@ -1367,10 +1336,10 @@ wDayCareMan::
 ; bit 0: monster 1 in daycare
 	db
 
-wBreedMon1::
-wBreedMon1Nick::  ds MON_NAME_LENGTH
-wBreedMon1OT:: ds NAME_LENGTH
-wBreedMon1Stats:: box_struct wBreedMon1
+wBreedMon1Nickname:: ds MON_NAME_LENGTH
+wBreedMon1OT:: ds PLAYER_NAME_LENGTH
+wBreedMon1Extra:: ds 3
+wBreedMon1:: breed_struct wBreedMon1
 
 wDayCareLady::
 ; bit 7: active
@@ -1383,14 +1352,12 @@ wBreedMotherOrNonDitto::
 ; nz: no
 	db
 
-wBreedMon2::
-wBreedMon2Nick:: ds MON_NAME_LENGTH
-wBreedMon2OT:: ds NAME_LENGTH
-wBreedMon2Stats:: box_struct wBreedMon2
+wBreedMon2Nickname:: ds MON_NAME_LENGTH
+wBreedMon2OT:: ds PLAYER_NAME_LENGTH
+wBreedMon2Extra:: ds 3
+wBreedMon2:: breed_struct wBreedMon2
 
-wEggNick:: ds MON_NAME_LENGTH
-wEggOT:: ds NAME_LENGTH
-wEggMon:: box_struct wEggMon
+	ds 54 ; unused
 
 wBugContestSecondPartySpecies:: db
 wContestMon:: party_struct wContestMon
@@ -1473,6 +1440,15 @@ wPokeAnimBitmaskBuffer:: db
 wPokeAnimStructEnd::
 
 
+SECTION "Used Storage", WRAMX
+
+wPokeDB1UsedEntries:: flag_array MONDB_ENTRIES
+wPokeDB1UsedEntriesEnd::
+
+wPokeDB2UsedEntries:: flag_array MONDB_ENTRIES
+wPokeDB2UsedEntriesEnd::
+
+
 SECTION "Sound Stack", WRAMX
 
 wSoundEngineBackup:: ds wChannelsEnd - wMusic
@@ -1499,30 +1475,30 @@ wDecompressedCreditsGFX:: ; ds (4 * 4 tiles) * 13 ; ds $d00
 ENDU
 
 
+SECTION "Game Version", WRAMX
+
+; Contains a copy of the game version. Used as protection against people trying
+; to load a save state for a save in a different game version.
+; Called "game version" to make it clear that there is no direct relation to
+; sSaveVersion -- this isn't the data used for writing to the save.
+wGameVersion:: dw
+
+
 SECTION "Battle Animations RAM", WRAMX
 
 wBattleAnims::
 wBattleAnimTileDict:: ds 10
 
 wActiveAnimObjects::
-wAnimObject01:: battle_anim_struct wAnimObject01
-wAnimObject02:: battle_anim_struct wAnimObject02
-wAnimObject03:: battle_anim_struct wAnimObject03
-wAnimObject04:: battle_anim_struct wAnimObject04
-wAnimObject05:: battle_anim_struct wAnimObject05
-wAnimObject06:: battle_anim_struct wAnimObject06
-wAnimObject07:: battle_anim_struct wAnimObject07
-wAnimObject08:: battle_anim_struct wAnimObject08
-wAnimObject09:: battle_anim_struct wAnimObject09
-wAnimObject10:: battle_anim_struct wAnimObject10
+for n, 1, NUM_ANIM_OBJECTS + 1
+wAnimObject{02d:n}:: battle_anim_struct wAnimObject{02d:n}
+endr
 wActiveAnimObjectsEnd::
 
 wActiveBGEffects::
-wBGEffect1:: battle_bg_effect wBGEffect1
-wBGEffect2:: battle_bg_effect wBGEffect2
-wBGEffect3:: battle_bg_effect wBGEffect3
-wBGEffect4:: battle_bg_effect wBGEffect4
-wBGEffect5:: battle_bg_effect wBGEffect5
+for n, 1, NUM_BG_EFFECTS + 1
+wBGEffect{d:n}:: battle_bg_effect wBGEffect{d:n}
+endr
 wActiveBGEffectsEnd::
 
 wLastAnimObjectIndex:: db

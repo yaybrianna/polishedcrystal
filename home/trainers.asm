@@ -126,7 +126,7 @@ LoadTrainer_continue::
 	ld hl, MAPOBJECT_SCRIPT_POINTER
 	add hl, bc
 	ld a, [wSeenTrainerBank]
-	call GetFarHalfword
+	call GetFarWord
 	ld de, wTempTrainer
 	pop af
 	push af
@@ -160,7 +160,7 @@ LoadTrainer_continue::
 	ret
 
 .generic_trainer_script
-	end_if_just_battled
+	endifjustbattled
 	jumpstashedtext
 
 FacingPlayerDistance_bc::
@@ -254,4 +254,4 @@ PrintWinLossText::
 	ld a, [wMapScriptsBank]
 	call FarPrintText
 	call ApplyTilemapInVBlank
-	jp WaitPressAorB_BlinkCursor
+	jmp WaitPressAorB_BlinkCursor

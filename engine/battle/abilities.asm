@@ -19,7 +19,7 @@ UserAbilityJumptable:
 AbilityJumptable:
 	; If we at some point make the AI learn abilities, keep this.
 	; For now it just jumps to the general jumptable function
-	jp BattleJumptable
+	jmp BattleJumptable
 
 BattleEntryAbilitiesNonfainted:
 	dbw TRACE, TraceAbility
@@ -73,7 +73,7 @@ NotificationAbilities:
 	call ShowAbilityActivation
 	pop hl
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 ImmunityAbility:
 PastelVeilAbility:
@@ -109,8 +109,8 @@ HealStatusAbility:
 	call EnableAnimations
 	ldh a, [hBattleTurn]
 	and a
-	jp z, UpdateBattleMonInParty
-	jp UpdateEnemyMonInParty
+	jmp z, UpdateBattleMonInParty
+	jmp UpdateEnemyMonInParty
 
 OwnTempoAbility:
 	ld a, BATTLE_VARS_SUBSTATUS3
@@ -124,7 +124,7 @@ OwnTempoAbility:
 	res SUBSTATUS_CONFUSED, [hl]
 	ld hl, ConfusedNoMoreText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 ObliviousAbility:
 	ld a, BATTLE_VARS_SUBSTATUS1
@@ -138,7 +138,7 @@ ObliviousAbility:
 	res SUBSTATUS_IN_LOVE, [hl]
 	ld hl, NoLongerInfatuatedText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 TraceAbility:
 	call GetOpponentAbility
@@ -169,10 +169,10 @@ TraceAbility:
 	call GetBattleVarAddr
 	pop af
 	ld [hl], a
-	jp RunActivationAbilitiesInner
+	jmp RunActivationAbilitiesInner
 .trace_failure
 	ld hl, TraceFailureText
-	jp StdBattleTextbox
+	jmp StdBattleTextbox
 
 ; Lasts 5 turns consistent with Generation VI.
 DrizzleAbility:
@@ -208,22 +208,22 @@ WeatherAbility:
 	ld de, SANDSTORM
 	farcall Call_PlayBattleAnim
 	farcall BattleCommand_startsandstorm
-	jp EnableAnimations
+	jmp EnableAnimations
 .handlerain
 	ld de, RAIN_DANCE
 	farcall Call_PlayBattleAnim
 	farcall BattleCommand_startrain
-	jp EnableAnimations
+	jmp EnableAnimations
 .handlesun
 	ld de, SUNNY_DAY
 	farcall Call_PlayBattleAnim
 	farcall BattleCommand_startsun
-	jp EnableAnimations
+	jmp EnableAnimations
 .handlehail
 	ld de, HAIL
 	farcall Call_PlayBattleAnim
 	farcall BattleCommand_starthail
-	jp EnableAnimations
+	jmp EnableAnimations
 
 IntimidateAbility:
 	; does not work against Inner Focus, Own Tempo, Oblivious, Scrappy
@@ -232,16 +232,15 @@ IntimidateAbility:
 	push af
 	farcall BufferAbility
 	pop af
-	ld de, 1
 	ld hl, NoIntimidateAbilities
-	call IsInArray
+	call IsInByteArray
 	jr nc, .intimidate_ok
 	call DisableAnimations
 	call ShowAbilityActivation
 	call ShowEnemyAbilityActivation
 	ld hl, BattleText_IntimidateResisted
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 .intimidate_ok
 	call DisableAnimations
@@ -261,7 +260,7 @@ IntimidateAbility:
 .continue
 	call EnableAnimations
 	farcall CheckWhiteHerb
-	jp SwitchTurn
+	jmp SwitchTurn
 
 INCLUDE "data/abilities/no_intimidate_abilities.asm"
 
@@ -301,7 +300,7 @@ DownloadAbility:
 	ld b, ATTACK
 .got_stat
 	farcall ForceRaiseStat
-	jp EnableAnimations
+	jmp EnableAnimations
 
 ImposterAbility:
 	; Disallowed on Neutralizing Gas (even in switch-out mode)
@@ -313,7 +312,7 @@ ImposterAbility:
 	; flags for the transform wave anim to not affect slideouts
 	farcall ShowPotentialAbilityActivation
 	farcall BattleCommand_transform
-	jp EnableAnimations
+	jmp EnableAnimations
 
 AnticipationAbility:
 ; Anticipation considers special types (just Hidden Power is applicable here) as
@@ -386,7 +385,7 @@ AnticipationAbility:
 .got_move_struct2
 	pop af
 	call GetFixedMoveStruct
-	jp SwitchTurn
+	jmp SwitchTurn
 
 ForewarnAbility:
 ; A note on moves with non-regular damage: Bulbapedia and Showdown has conflicting info on
@@ -416,9 +415,8 @@ ForewarnAbility:
 	push af
 	push hl
 	; Check for special cases
-	ld de, 1
 	ld hl, DynamicPowerMoves
-	call IsInArray
+	call IsInByteArray
 	pop hl
 	pop bc
 	jr nc, .not_special
@@ -478,11 +476,11 @@ ForewarnAbility:
 	call DisableAnimations
 	call ShowAbilityActivation
 	pop af
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetMoveName
 	ld hl, ForewarnText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 FriskAbility:
 	farcall GetOpponentItem
@@ -494,21 +492,21 @@ FriskAbility:
 	call GetCurItemName
 	ld hl, FriskedItemText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 RunEnemyOwnTempoAbility:
 	call SwitchTurn
 	call GetTrueUserAbility
 	cp OWN_TEMPO
 	call z, OwnTempoAbility
-	jp SwitchTurn
+	jmp SwitchTurn
 
 RunEnemySynchronizeAbility:
 	call SwitchTurn
 	call GetTrueUserAbility
 	cp SYNCHRONIZE
 	call z, SynchronizeAbility
-	jp SwitchTurn
+	jmp SwitchTurn
 
 SynchronizeAbility:
 	ld a, BATTLE_VARS_STATUS
@@ -527,16 +525,16 @@ SynchronizeAbility:
 	cp 1 << PSN
 	jr z, .is_psn
 	farcall BattleCommand_toxic
-	jp EnableAnimations
+	jmp EnableAnimations
 .is_psn
 	farcall BattleCommand_poison
-	jp EnableAnimations
+	jmp EnableAnimations
 .is_par
 	farcall BattleCommand_paralyze
-	jp EnableAnimations
+	jmp EnableAnimations
 .is_brn
 	farcall BattleCommand_burn
-	jp EnableAnimations
+	jmp EnableAnimations
 
 ResolveOpponentBerserk_CheckMultihit:
 ; Does nothing if we're currently in an ongoing multihit move.
@@ -569,30 +567,25 @@ ResolveOpponentBerserk:
 	call SwitchTurn
 	ld b, SP_ATTACK
 	call StatUpAbility
-	jp SwitchTurn
+	jmp SwitchTurn
 
 RunFaintAbilities:
 ; abilities that run after an attack faints an enemy
 	farcall GetFutureSightUser
 	ret nz
 	call GetTrueUserAbility
-	call .user_abilities
+	call _RunFaintUserAbilities
 	call GetOpponentAbilityAfterMoldBreaker
 	push af
 	call SwitchTurn
 	pop af
-	call .opponent_abilities
-	jp SwitchTurn
+	call _RunFaintOpponentAbilities
+	jmp SwitchTurn
 
-.user_abilities
-	cp MOXIE
-	jp z, MoxieAbility
-	ret
-.opponent_abilities
+_RunFaintOpponentAbilities:
 	cp AFTERMATH
-	jp z, AftermathAbility
-	ret
-
+	ret nz
+	; fallthrough
 AftermathAbility:
 	; Damp protects against this
 	call GetOpponentAbility
@@ -610,7 +603,7 @@ AftermathAbility:
 	ld hl, IsHurtText
 	call StdBattleTextbox
 	call EnableAnimations
-	jp SwitchTurn
+	jmp SwitchTurn
 
 RunHitAbilities:
 ; abilities that run on hitting the enemy with an offensive attack
@@ -630,11 +623,11 @@ RunHitAbilities:
 	pop af
 	pop bc
 	call .do_enemy_abilities
-	jp SwitchTurn
+	jmp SwitchTurn
 
 .do_enemy_abilities
 	cp CURSED_BODY
-	jp z, CursedBodyAbility
+	jr z, CursedBodyAbility
 	push bc
 	push af
 	call HasUserFainted
@@ -643,47 +636,11 @@ RunHitAbilities:
 	pop bc
 	ret z
 	cp JUSTIFIED
-	jp z, JustifiedAbility
+	jmp z, JustifiedAbility
 	cp RATTLED
-	jp z, RattledAbility
+	jmp z, RattledAbility
 	cp WEAK_ARMOR
-	jp z, WeakArmorAbility
-	ret
-
-RunContactAbilities:
-; turn perspective is from the attacker
-; 30% of the time, activate Poison Touch
-	call BattleRandom
-	cp 1 + 30 percent
-	jr nc, .skip_user_ability
-	call GetTrueUserAbility
-	cp POISON_TOUCH
-	call z, PoisonTouchAbility
-.skip_user_ability
-; abilities only trigger 30% of the time
-;
-; Abilities always run from the ability user's perspective. This is
-; consistent. Thus, a switchturn happens here. Feel free to rework
-; the logic if you feel that this reduces readability.
-	call BattleRandom
-	cp 1 + 30 percent
-	ret nc
-	call GetOpponentAbilityAfterMoldBreaker
-	ld b, a
-
-	call CallOpponentTurn
-.do_enemy_abilities
-	ld a, b
-	cp EFFECT_SPORE
-	jp z, EffectSporeAbility
-	cp FLAME_BODY
-	jp z, FlameBodyAbility
-	cp POISON_POINT
-	jp z, PoisonPointAbility
-	cp STATIC
-	jp z, StaticAbility
-	cp CUTE_CHARM
-	jp z, CuteCharmAbility
+	jmp z, WeakArmorAbility
 	ret
 
 CursedBodyAbility:
@@ -700,15 +657,56 @@ CursedBodyAbility:
 	call DisableAnimations
 	; this runs ShowAbilityActivation when relevant
 	farcall BattleCommand_disable
-	jp EnableAnimations
+	jmp EnableAnimations
+
+RunContactAbilities:
+; turn perspective is from the attacker
+	call GetTrueUserAbility
+	ld hl, UserContactAbilities
+	call AbilityJumptable
+	call GetOpponentAbilityAfterMoldBreaker
+	call SwitchTurn
+	ld hl, TargetContactAbilities
+	call AbilityJumptable
+	jmp SwitchTurn
+
+UserContactAbilities:
+	dbw POISON_TOUCH, PoisonTouchAbility
+	dbw -1, -1
+
+TargetContactAbilities:
+	dbw EFFECT_SPORE, EffectSporeAbility
+	dbw FLAME_BODY, FlameBodyAbility
+	dbw POISON_POINT, PoisonPointAbility
+	dbw STATIC, StaticAbility
+	dbw CUTE_CHARM, CuteCharmAbility
+	dbw TANGLING_HAIR, TanglingHairAbility
+	dbw -1, -1
 
 CuteCharmAbility:
 	call HasUserFainted
 	ret z
+
+	; Only works 30% of the time.
+	ld a, 10
+	call BattleRandomRange
+	cp 3
+	ret nc
+
 	call DisableAnimations
 	; this runs ShowAbilityActivation when relevant
 	farcall BattleCommand_attract
-	jp EnableAnimations
+	jmp EnableAnimations
+
+TanglingHairAbility:
+	call HasOpponentFainted
+	ret z
+
+	call DisableAnimations
+	ld b, SPEED
+	ld a, STAT_SILENT
+	farcall _ForceLowerOppStat
+	jmp EnableAnimations
 
 EffectSporeAbility:
 	call CheckIfTargetIsGrassType
@@ -753,6 +751,12 @@ StaticAbility:
 AfflictStatusAbility:
 	ld b, 0
 _AfflictStatusAbility:
+	; Only works 30% of the time.
+	ld a, 10
+	call BattleRandomRange
+	cp 3
+	ret nc
+
 	push hl
 	push bc
 	ld a, BANK(CanPoisonTarget)
@@ -782,7 +786,7 @@ _AfflictStatusAbility:
 	call UpdateOpponentInParty
 	call UpdateBattleHuds
 	farcall PostStatusWithSynchronize
-	jp EnableAnimations
+	jmp EnableAnimations
 
 CheckNullificationAbilities:
 ; Doesn't deal with the active effect of this, but just checking if they apply vs
@@ -795,10 +799,8 @@ CheckNullificationAbilities:
 	jr z, .damp
 	cp SOUNDPROOF
 	jr z, .soundproof
-
-	; Non-damaging moves only work on Flash Fire and Lightning Rod
 	cp FLASH_FIRE
-	jr z, .check_others
+	jr z, .flash_fire
 	cp LIGHTNING_ROD
 	jr z, .check_others
 
@@ -838,9 +840,16 @@ CheckNullificationAbilities:
 	ld a, BATTLE_VARS_MOVE
 	call GetBattleVar
 	ld hl, SoundMoves
-	ld de, 1
-	call IsInArray
-	ret nc
+	call IsInByteArray
+	jr c, .ability_ok
+	ret
+
+.flash_fire
+	; Also affected by status moves and Will-O-Wisp
+	ld a, BATTLE_VARS_MOVE_EFFECT
+	call GetBattleVar
+	cp EFFECT_BURN
+	jr nz, .check_others
 
 .ability_ok
 	ld a, ATKFAIL_ABILITY
@@ -867,7 +876,7 @@ RunEnemyNullificationAbilities:
 	ld hl, DoesntAffectText
 	call StdBattleTextbox
 	call EnableAnimations
-	jp SwitchTurn
+	jmp SwitchTurn
 
 NullificationAbilities:
 	dbw DRY_SKIN, DrySkinAbility
@@ -885,13 +894,13 @@ DampAbility:
 	; would be confusing
 	ld a, BATTLE_VARS_MOVE_OPP
 	call GetBattleVar
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetMoveName
 	call DisableAnimations
 	call ShowAbilityActivation
 	ld hl, CannotUseText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 RunStatIncreaseAbilities:
 	call CallOpponentTurn
@@ -899,7 +908,7 @@ RunEnemyStatIncreaseAbilities:
 	call SwitchTurn
 	ld hl, StatIncreaseAbilities
 	call UserAbilityJumptable
-	jp SwitchTurn
+	jmp SwitchTurn
 
 StatIncreaseAbilities:
 	dbw COMPETITIVE, CompetitiveAbility
@@ -918,10 +927,15 @@ JustifiedAbility:
 	cp DARK
 	ret nz
 	jr AttackUpAbility
+_RunFaintUserAbilities:
+	cp MOXIE
+	ret nz
+	; fallthrough
 MoxieAbility:
 	; Don't run if battle is over
 	farcall CheckAnyOtherAliveOpponentMons
 	ret z
+	; fallthrough
 SapSipperAbility:
 AttackUpAbility:
 	ld b, ATTACK
@@ -937,8 +951,7 @@ RattledAbility:
 	cp DARK
 	jr z, .ok
 	cp GHOST
-	jr z, .ok
-	ret
+	ret nz
 .ok
 	; fallthrough
 MotorDriveAbility:
@@ -972,7 +985,7 @@ StatUpAbility:
 	call EnableAnimations
 	call SwitchTurn
 .done
-	jp EnableAnimations
+	jmp EnableAnimations
 
 WeakArmorAbility:
 	; only physical moves activate this
@@ -985,7 +998,7 @@ WeakArmorAbility:
 	farcall LowerStat
 	ld b, $10 | SPEED
 	farcall RaiseStat
-	jp EnableAnimations
+	jmp EnableAnimations
 
 FlashFireAbility:
 	call DisableAnimations
@@ -998,13 +1011,13 @@ FlashFireAbility:
 	set SUBSTATUS_FLASH_FIRE, [hl]
 	ld hl, FirePoweredUpText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 .already_fired_up
 	call SwitchTurn
 	ld hl, DoesntAffectText
 	call StdBattleTextbox
 	call EnableAnimations
-	jp SwitchTurn
+	jmp SwitchTurn
 
 DrySkinAbility:
 VoltAbsorbAbility:
@@ -1017,15 +1030,17 @@ WaterAbsorbAbility:
 	farcall RestoreHP
 	ld hl, RegainedHealthText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 .full_hp
 	ld hl, HPIsFullText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 ApplySpeedAbilities:
 ; Passive speed boost abilities
 	call GetTrueUserAbility
+	cp UNBURDEN
+	jr z, .unburden
 	cp SWIFT_SWIM
 	jr z, .swift_swim
 	cp CHLOROPHYLL
@@ -1037,9 +1052,18 @@ ApplySpeedAbilities:
 	cp QUICK_FEET
 	ret nz
 	ld a, BATTLE_VARS_STATUS
+	call GetBattleVar
 	and a
 	ret z
 	ln a, 3, 2 ; x1.5
+	jr .apply_mod
+.unburden
+	; Only if we have the Unburden volatile
+	ld a, BATTLE_VARS_SUBSTATUS1
+	call GetBattleVar
+	bit SUBSTATUS_UNBURDEN, a
+	ret z
+	ln a, 2, 1 ; x2
 	jr .apply_mod
 .swift_swim
 	ld h, WEATHER_RAIN
@@ -1058,7 +1082,7 @@ ApplySpeedAbilities:
 	ret nz
 	ln a, 2, 1 ; x2
 .apply_mod
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 ApplyAccuracyAbilities:
 	call GetTrueUserAbility
@@ -1066,7 +1090,7 @@ ApplyAccuracyAbilities:
 	call AbilityJumptable
 	call GetOpponentAbilityAfterMoldBreaker
 	ld hl, TargetAccuracyAbilities
-	jp AbilityJumptable
+	jmp AbilityJumptable
 
 UserAccuracyAbilities:
 	dbw COMPOUND_EYES, CompoundEyesAbility
@@ -1083,12 +1107,12 @@ TargetAccuracyAbilities:
 CompoundEyesAbility:
 ; Increase accuracy by 30%
 	ln a, 13, 10 ; x1.3
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 HustleAccuracyAbility:
 ; Decrease accuracy for physical attacks by 20%
 	ld a, $45
-	jp ApplyPhysicalAttackDamageMod
+	jmp ApplyPhysicalAttackDamageMod
 
 TangledFeetAbility:
 ; Double evasion if confused
@@ -1097,7 +1121,7 @@ TangledFeetAbility:
 	bit SUBSTATUS_CONFUSED, a
 	ret z
 	ln a, 1, 2 ; x0.5
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 WonderSkinAbility:
 ; Double evasion for status moves
@@ -1106,7 +1130,7 @@ WonderSkinAbility:
 	cp STATUS
 	ret nz
 	ln a, 1, 2 ; x0.5
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 SandVeilAbility:
 	ld b, WEATHER_SANDSTORM
@@ -1119,11 +1143,11 @@ WeatherAccAbility:
 	cp b
 	ret nz
 	ln a, 4, 5 ; x0.8
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 RunWeatherAbilities:
 	ld hl, WeatherAbilities
-	jp UserAbilityJumptable
+	jmp UserAbilityJumptable
 
 WeatherAbilities:
 	dbw DRY_SKIN, DrySkinWeatherAbility
@@ -1145,7 +1169,7 @@ SolarPowerWeatherAbility:
 	predef SubtractHPFromUser
 	ld hl, IsHurtText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 IceBodyAbility:
 	ld b, WEATHER_HAIL
@@ -1172,7 +1196,7 @@ WeatherRecoveryAbility:
 	farcall RestoreHP
 	ld hl, RegainedHealthText
 	call StdBattleTextbox
-	jp EnableAnimations
+	jmp EnableAnimations
 
 EndturnAbilitiesA:
 	ld hl, EndturnAbilityTableA
@@ -1189,7 +1213,7 @@ _EndturnAbilities:
 	ret z
 	call UserAbilityJumptable
 	ld hl, StatusHealAbilities
-	jp UserAbilityJumptable
+	jmp UserAbilityJumptable
 
 EndturnAbilityTableA:
 	dbw SHED_SKIN, ShedSkinAbility
@@ -1254,7 +1278,7 @@ HarvestAbility:
 	ldh a, [hBattleTurn]
 	and a
 	ret nz
-	jp SetBackupItem
+	jmp SetBackupItem
 
 PickupAbility:
 ; At end of turn, pickup consumed opponent items if we don't have any
@@ -1301,7 +1325,7 @@ RegainItemByAbility:
 	pop hl
 	pop af
 
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	push af
 	push hl
 	call GetItemName
@@ -1318,7 +1342,7 @@ RegainItemByAbility:
 .got_item_addr
 	call GetPartyLocation
 	ld [hl], b
-	jp EnableAnimations
+	jmp EnableAnimations
 
 GetCappedStats:
 	; First, check how many stats aren't maxed out
@@ -1433,7 +1457,7 @@ MoodyAbility:
 	ld b, e
 	farcall ForceLowerStat
 .lower_done
-	jp EnableAnimations
+	jmp EnableAnimations
 
 ApplyDamageAbilities_AfterTypeMatchup:
 	call GetTrueUserAbility
@@ -1441,7 +1465,7 @@ ApplyDamageAbilities_AfterTypeMatchup:
 	call AbilityJumptable
 	call GetOpponentAbilityAfterMoldBreaker
 	ld hl, DefensiveDamageAbilities_AfterTypeMatchup
-	jp AbilityJumptable
+	jmp AbilityJumptable
 
 OffensiveDamageAbilities_AfterTypeMatchup:
 	dbw TINTED_LENS, TintedLensAbility
@@ -1458,7 +1482,7 @@ ApplyDamageAbilities:
 	call AbilityJumptable
 	call GetOpponentAbilityAfterMoldBreaker
 	ld hl, DefensiveDamageAbilities
-	jp AbilityJumptable
+	jmp AbilityJumptable
 
 OffensiveDamageAbilities:
 	dbw TECHNICIAN, TechnicianAbility
@@ -1496,19 +1520,19 @@ TechnicianAbility:
 	cp 61
 	ret nc
 	ln a, 3, 2 ; x1.5
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 HugePowerAbility:
 ; Doubles physical attack
 	ld a, $21
-	jp ApplyPhysicalAttackDamageMod
+	jmp ApplyPhysicalAttackDamageMod
 
 HustleAbility:
 ; 150% physical attack, 80% accuracy (done elsewhere)
 GorillaTacticsAbility:
 ; 150% physical attack, locks into one move (done elsewhere)
 	ld a, $32
-	jp ApplyPhysicalAttackDamageMod
+	jmp ApplyPhysicalAttackDamageMod
 
 OvergrowAbility:
 	ld b, GRASS
@@ -1530,7 +1554,7 @@ PinchAbility:
 	call CheckPinch
 	ret nz
 	ln a, 3, 2 ; x1.5
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 RivalryAbility:
 ; 100% damage if either mon is genderless, 125% if same gender, 75% if opposite gender
@@ -1540,7 +1564,7 @@ RivalryAbility:
 	jr z, .apply_damage_mod
 	ln a, 3, 4 ; x0.75
 .apply_damage_mod
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 SheerForceAbility:
 ; 130% damage if a secondary effect is suppressed
@@ -1548,7 +1572,7 @@ SheerForceAbility:
 	and a
 	ret z
 	ln a, 13, 10 ; x1.3
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 AnalyticAbility:
 ; 130% damage if opponent went first
@@ -1561,7 +1585,7 @@ AnalyticAbility:
 	ret z
 .future_sight
 	ln a, 13, 10 ; x1.3
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 TintedLensAbility:
 ; Doubles damage for not very effective moves (x0.5/x0.25)
@@ -1569,7 +1593,7 @@ TintedLensAbility:
 	cp $10
 	ret nc
 	ln a, 2, 1 ; x2
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 SolarPowerAbility:
 ; 150% special attack in sun, take 1/8 damage at turn end in sun (done elsewhere)
@@ -1577,13 +1601,13 @@ SolarPowerAbility:
 	cp WEATHER_SUN
 	ret nz
 	ln a, 3, 2 ; x1.5
-	jp ApplySpecialAttackDamageMod
+	jmp ApplySpecialAttackDamageMod
 
 ToughClawsAbility:
 	call CheckContactMove
 	ret c
 	ln a, 13, 10 ; x1.3
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 MegaLauncherAbility:
 	ld hl, LauncherMoves
@@ -1604,11 +1628,11 @@ MoveBoostAbility:
 	ld a, BATTLE_VARS_MOVE
 	call GetBattleVar
 	push bc
-	call IsInArray
+	call IsInByteArray
 	pop bc
-	ret c
+	ret nc
 	ld a, b
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 SandForceAbility:
 ; 130% damage for Ground/Rock/Steel-type moves in a sandstorm, not hurt by Sandstorm
@@ -1625,13 +1649,13 @@ SandForceAbility:
 	ret nz
 .ok
 	ln a, 13, 10 ; x1.3
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 RecklessAbility:
 ; 120% damage for (Hi) Jump Kick and recoil moves except for Struggle
 	ld a, BATTLE_VARS_MOVE
 	call GetBattleVar
-	cp STRUGGLE
+	inc a ; cp STRUGGLE
 	ret z
 	ld a, BATTLE_VARS_MOVE_EFFECT
 	call GetBattleVar
@@ -1641,7 +1665,7 @@ RecklessAbility:
 	ret nz
 .ok
 	ln a, 6, 5 ; x1.2
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 GutsAbility:
 ; 150% physical attack if user is statused
@@ -1657,7 +1681,7 @@ GutsAbility:
 	and a
 	ret z
 	ld a, $32
-	jp ApplyPhysicalAttackDamageMod
+	jmp ApplyPhysicalAttackDamageMod
 
 PixilateAbility:
 	ld b, FAIRY
@@ -1674,14 +1698,14 @@ AteAbilities:
 	; change move type
 	ld [hl], b
 	ln a, 6, 5 ; x1.2
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 EnemyMultiscaleAbility:
 ; 50% damage if user is at full HP
 	farcall CheckOpponentFullHP
 	ret nz
 	ln a, 1, 2 ; x0.5
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 EnemyMarvelScaleAbility:
 ; 150% physical Defense if statused
@@ -1690,7 +1714,7 @@ EnemyMarvelScaleAbility:
 	and a
 	ret z
 	ld a, $23
-	jp ApplyPhysicalDefenseDamageMod
+	jmp ApplyPhysicalDefenseDamageMod
 
 EnemySolidRockAbility:
 EnemyFilterAbility:
@@ -1699,7 +1723,7 @@ EnemyFilterAbility:
 	cp $11
 	ret c
 	ln a, 3, 4 ; x0.75
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 EnemyThickFatAbility:
 ; 50% damage for Fire and Ice-type moves
@@ -1711,7 +1735,7 @@ EnemyThickFatAbility:
 	ret nz
 .ok
 	ln a, 1, 2 ; x0.5
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 EnemyDrySkinAbility:
 ; 125% damage for Fire-type moves, heals 1/4 from Water, regenerates 1/8 at end of turn in
@@ -1722,12 +1746,12 @@ EnemyDrySkinAbility:
 	cp FIRE
 	ret nz
 	ln a, 5, 4 ; x1.25
-	jp MultiplyAndDivide
+	jmp MultiplyAndDivide
 
 EnemyFurCoatAbility:
 ; Doubles physical Defense
 	ld a, $12
-	jp ApplyPhysicalDefenseDamageMod
+	jmp ApplyPhysicalDefenseDamageMod
 
 HydrationAbility:
 	call GetWeatherAfterUserUmbrella
@@ -1743,7 +1767,7 @@ ShedSkinAbility:
 NaturalCureAbility:
 HealAllStatusAbility:
 	ld a, ALL_STATUS
-	jp HealStatusAbility
+	jmp HealStatusAbility
 
 AngerPointAbility:
 	call DisableAnimations
@@ -1758,7 +1782,7 @@ AngerPointAbility:
 	xor a
 	farcall DoPrintStatChange
 .done
-	jp EnableAnimations
+	jmp EnableAnimations
 
 RunSwitchAbilities:
 ; abilities that activate when you switch out
@@ -1778,8 +1802,8 @@ RegeneratorAbility:
 	call EnableAnimations
 	ldh a, [hBattleTurn]
 	and a
-	jp z, UpdateBattleMonInParty
-	jp UpdateEnemyMonInParty
+	jmp z, UpdateBattleMonInParty
+	jmp UpdateEnemyMonInParty
 
 _GetOpponentAbilityAfterMoldBreaker::
 ; Returns an opponent's ability unless Mold Breaker
@@ -1792,11 +1816,10 @@ _GetOpponentAbilityAfterMoldBreaker::
 	cp MOLD_BREAKER
 	ld a, b
 	jr nz, .end
-	ld de, 1
 	push hl
 	push bc
 	ld hl, MoldBreakerSuppressedAbilities
-	call IsInArray
+	call IsInByteArray
 	pop bc
 	pop hl
 	ld a, b
@@ -1844,10 +1867,12 @@ ShowAbilityActivation::
 	ld b, a
 	call PerformAbilityGFX
 
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 RunPostBattleAbilities::
 ; Checks party for potentially finding items (Pickup) or curing status (Natural Cure)
+	; Ensure that ability slideouts appear for the correct side for Pickup.
+	call SetPlayerTurn
 	ld a, [wPartyCount]
 	jr .first_pass
 .loop
@@ -1909,7 +1934,7 @@ RunPostBattleAbilities::
 	ld [hl], a
 	push bc
 	push de
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetItemName
 	ld hl, wStringBuffer1
 	ld de, wStringBuffer2
@@ -1922,10 +1947,10 @@ RunPostBattleAbilities::
 	ld a, MON_SPECIES
 	call GetPartyParamLocation
 	ld a, [hl]
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetPokemonName
 	ld hl, wStringBuffer1
-	ld de, wBattleMonNick
+	ld de, wBattleMonNickname
 	ld bc, MON_NAME_LENGTH
 	rst CopyBytes
 	ld b, PICKUP
@@ -1934,7 +1959,7 @@ RunPostBattleAbilities::
 	call StdBattleTextbox
 	pop de
 	pop bc
-	jp EnableAnimations
+	jmp EnableAnimations
 
 GetRandomPickupItem::
 	push de
@@ -2004,7 +2029,7 @@ GetScaledItemReward:
 	ld l, e
 .ok:
 	add hl, bc
-	jp GetFarByte
+	jmp GetFarByte
 
 .inc_bc:
 	inc bc

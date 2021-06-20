@@ -23,7 +23,7 @@ ShamoutiPokeCenter1F_MapScriptHeader:
 
 ShamoutiPokeCenter1FFixStairScript:
 	changeblock 0, 6, $39
-	return
+	endcallback
 
 PokemonJournalLoreleiScript:
 	setflag ENGINE_READ_LORELEI_JOURNAL
@@ -67,53 +67,38 @@ ShamoutiPokeCenter1FIvyScript:
 	done
 
 .Bulbasaur:
-	setevent EVENT_GOT_BULBASAUR_FROM_IVY
 	writetext .ChoseKantoStarterText
-	buttonsound
+	promptbutton
 	waitsfx
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, .NoRoom
-	pokenamemem BULBASAUR, $0
-	writetext .ReceivedKantoStarterText
-	playsound SFX_CAUGHT_MON
-	waitsfx
-	buttonsound
 	givepoke BULBASAUR, NO_FORM, 10, SITRUS_BERRY
-	jump .Finish
+	iffalse_jumpopenedtext .NoRoomText
+	getmonname BULBASAUR, STRING_BUFFER_3
+	setevent EVENT_GOT_BULBASAUR_FROM_IVY
+	sjump .Finish
 
 .Charmander:
-	setevent EVENT_GOT_CHARMANDER_FROM_IVY
 	writetext .ChoseKantoStarterText
-	buttonsound
+	promptbutton
 	waitsfx
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, .NoRoom
-	pokenamemem CHARMANDER, $0
-	writetext .ReceivedKantoStarterText
-	playsound SFX_CAUGHT_MON
-	waitsfx
-	buttonsound
 	givepoke CHARMANDER, NO_FORM, 10, SITRUS_BERRY
-	jump .Finish
+	iffalse_jumpopenedtext .NoRoomText
+	getmonname CHARMANDER, STRING_BUFFER_3
+	setevent EVENT_GOT_CHARMANDER_FROM_IVY
+	sjump .Finish
 
 .Squirtle:
-	setevent EVENT_GOT_SQUIRTLE_FROM_IVY
 	writetext .ChoseKantoStarterText
-	buttonsound
+	promptbutton
 	waitsfx
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, .NoRoom
-	pokenamemem SQUIRTLE, $0
-	writetext .ReceivedKantoStarterText
-	playsound SFX_CAUGHT_MON
-	waitsfx
-	buttonsound
 	givepoke SQUIRTLE, NO_FORM, 10, SITRUS_BERRY
+	iffalse_jumpopenedtext .NoRoomText
+	getmonname SQUIRTLE, STRING_BUFFER_3
+	setevent EVENT_GOT_SQUIRTLE_FROM_IVY
 .Finish:
 	writetext .GoodbyeText
 	waitbutton
 	closetext
-	checkcode VAR_FACING
+	readvar VAR_FACING
 	turnobject PLAYER, DOWN
 	ifnotequal UP, .noleftstep
 	applyonemovement SHAMOUTIPOKECENTER1F_IVY, step_left
@@ -129,12 +114,11 @@ ShamoutiPokeCenter1FIvyScript:
 	waitsfx
 	end
 
-.NoRoom:
-	jumpthisopenedtext
-
-	text "Ivy: Oh, there's no"
-	line "more room in your"
-	cont "party…"
+.NoRoomText:
+	text "Alas, it seems"
+	line "there's no room in"
+	cont "either your party"
+	cont "or your box…"
 	done
 
 .GreetingText:
@@ -191,13 +175,6 @@ ShamoutiPokeCenter1FIvyScript:
 	cont "#mon too!"
 	done
 
-.ReceivedKantoStarterText:
-	text "<PLAYER> received"
-	line ""
-	text_from_ram wStringBuffer3
-	text "!"
-	done
-
 .GoodbyeText:
 	text "Ivy: Prof.Elm"
 	line "trusted you with"
@@ -209,7 +186,7 @@ ShamoutiPokeCenter1FIvyScript:
 	para "know you'll take"
 	line "good care of that"
 	cont ""
-	text_from_ram wStringBuffer3
+	text_ram wStringBuffer3
 	text "."
 
 	para "Well, I need to"

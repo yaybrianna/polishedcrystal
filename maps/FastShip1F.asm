@@ -27,7 +27,7 @@ FastShip1F_MapScriptHeader:
 
 	def_object_events
 	object_event 25,  2, SPRITE_SAILOR, SPRITEMOVEDATA_STANDING_DOWN, 0, 0, -1, -1, 0, OBJECTTYPE_SCRIPT, 0, FastShip1FSailor1Script, -1
-	object_event 19,  6, SPRITE_GENTLEMAN, SPRITEMOVEDATA_STANDING_RIGHT, 0, 0, -1, -1, 0, OBJECTTYPE_SCRIPT, 0, ObjectEvent, EVENT_FAST_SHIP_1F_GENTLEMAN
+	object_event 19,  6, SPRITE_GENTLEMAN, SPRITEMOVEDATA_STANDING_RIGHT, 0, 0, -1, -1, PAL_NPC_PURPLE, OBJECTTYPE_SCRIPT, 0, ObjectEvent, EVENT_FAST_SHIP_1F_GENTLEMAN
 	object_event 14,  7, SPRITE_SAILOR, SPRITEMOVEDATA_STANDING_RIGHT, 0, 0, -1, -1, 0, OBJECTTYPE_SCRIPT, 0, FastShip1FSailor2Script, -1
 	object_event 22, 17, SPRITE_SAILOR, SPRITEMOVEDATA_WALK_LEFT_RIGHT, 0, 2, -1, -1, 0, OBJECTTYPE_COMMAND, jumptextfaceplayer, FastShip1FSailor3Text, -1
 
@@ -36,11 +36,11 @@ FastShip1F_MapScriptHeader:
 	const FASTSHIP1F_GENTLEMAN
 
 FastShip1FTrigger1:
-	priorityjump FastShip1FPriorityJump2
+	sdefer FastShip1FEnterFastShipScript
 FastShip1FTrigger0:
 	end
 
-FastShip1FPriorityJump2:
+FastShip1FEnterFastShipScript:
 	applymovement FASTSHIP1F_SAILOR1, FastShip1F_SailorStepAsideMovement
 	applymovement PLAYER, FastShip1F_PlayerEntersShipMovement
 	applymovement FASTSHIP1F_SAILOR1, FastShip1F_SailorBlocksDoorMovement
@@ -105,7 +105,7 @@ FastShip1FSailor1Script:
 	end
 
 .LetThePlayerOut:
-	checkcode VAR_FACING
+	readvar VAR_FACING
 	ifequal RIGHT, .YouAreFacingRight
 	applymovement FASTSHIP1F_SAILOR1, FastShip1F_SailorStepAsideMovement
 	applymovement PLAYER, FastShip1F_PlayerLeavesShipMovement

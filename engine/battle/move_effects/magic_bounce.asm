@@ -26,9 +26,8 @@ BattleCommand_bounceback:
 	ret z
 
 	; Some moves bypass Substitute
-	ld de, 1
 	ld hl, SubstituteBypassMoves
-	call IsInArray
+	call IsInByteArray
 	jr c, .sub_ok
 
 	; Otherwise, Substitute blocks it
@@ -61,7 +60,7 @@ BattleCommand_bounceback:
 	farcall ShowAbilityActivation
 	pop bc
 	ld a, b
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetMoveName
 	ld hl, BouncedBackText
 	call StdBattleTextbox
@@ -100,4 +99,4 @@ BattleCommand_bounceback:
 	pop af
 	ld [hl], a
 	call UpdateMoveData
-	jp SwitchTurn
+	jmp SwitchTurn

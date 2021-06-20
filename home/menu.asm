@@ -99,7 +99,7 @@ CopyMenuData2::
 	ld de, wMenuDataFlags
 	ld bc, wMenuDataEnd - wMenuDataFlags
 	rst CopyBytes
-	jp PopAFBCDEHL
+	jmp PopAFBCDEHL
 
 GetWindowStackTop::
 	ld hl, wWindowStackPointer
@@ -116,7 +116,7 @@ PlaceVerticalMenuItems::
 	call CopyMenuData2
 	ld a, [wMenuDataItems]
 	and a
-	jp z, SetUpVariableDataMenu
+	jmp z, SetUpVariableDataMenu
 	ld hl, wMenuDataPointer
 	ld a, [hli]
 	ld d, [hl]
@@ -155,7 +155,7 @@ MenuBox::
 	call GetMenuBoxDims
 	dec b
 	dec c
-	jp Textbox
+	jmp Textbox
 
 GetMenuTextStartCoord::
 	ld a, [wMenuBorderTopCoord]
@@ -185,21 +185,21 @@ ClearMenuBoxInterior::
 	call GetMenuBoxDims
 	dec b
 	dec c
-	jp ClearBox
+	jmp ClearBox
 
 ClearWholeMenuBox::
 	call MenuBoxCoord2Tile
 	call GetMenuBoxDims
 	inc c
 	inc b
-	jp ClearBox
+	jmp ClearBox
 
 PushWindow_MenuBoxCoordToTile::
-	coord bc, 0, 0
+	bccoord 0, 0
 	jr PushWindow_MenuBoxCoordToAbsolute
 
 PushWindow_MenuBoxCoordToAttr::
-	coord bc, 0, 0, wAttrMap
+	bccoord 0, 0, wAttrMap
 
 ; fallthrough
 PushWindow_MenuBoxCoordToAbsolute:
@@ -267,11 +267,11 @@ MenuTextbox::
 	push hl
 	call LoadMenuTextbox
 	pop hl
-	jp PrintText
+	jmp PrintText
 
 MenuTextboxBackup::
 	call MenuTextbox
-	jp CloseWindow
+	jmp CloseWindow
 
 LoadMenuTextbox::
 	ld hl, MenuTextboxDataHeader
@@ -283,7 +283,7 @@ LoadStandardMenuHeader::
 
 LoadMenuHeader::
 	call CopyMenuHeader
-	jp PushWindow
+	jmp PushWindow
 
 StandardMenuDataHeader:
 	db $40 ; tile backup
@@ -316,7 +316,7 @@ VerticalMenu::
 	ld a, [wMenuFlags]
 	bit 2, a
 	ld a, b
-	jp nz, GetVariableDataMenuResult
+	jmp nz, GetVariableDataMenuResult
 	bit 1, b
 	jr z, .okay
 .cancel
@@ -333,23 +333,45 @@ GetMenu2::
 	ld a, [wMenuCursorY]
 	ret
 
-YesNoBox::
+GetYesNoBoxPosition:
 	ld a, [wInPokegear]
 	and a
 	lb bc, SCREEN_WIDTH - 6, 7
-	jr z, .got_position
+	ret z
 	dec b
-.got_position
-	; fallthrough
+	ret
 
+NoYesBox:
+; Returns c (no) or nc (yes). Doesn't mess with menu cursor.
+	call GetYesNoBoxPosition
+	; fallthrough
+PlaceNoYesBox:
+	ld hl, NoYesMenuDataHeader
+	call HandleYesNoMenu
+	ret c
+	add 1 ; no-optimize a++|a--
+	ret
+
+YesNoBox:
+; Returns c (no) or nc (yes) and sets menu cursor appropriately.
+	call GetYesNoBoxPosition
+	; fallthrough
 PlaceYesNoBox::
-; Return nc (yes) or c (no).
-	push bc
 	ld hl, YesNoMenuDataHeader
+	call HandleYesNoMenu
+	jr c, .fix_menu
+	sub 1 ; no-optimize a++|a--
+	ret
+.fix_menu
+	ld a, 2
+	ld [wMenuCursorY], a
+	ret
+
+HandleYesNoMenu:
+; Returns c if cancelled, otherwise $ff or $00 in a for first or second option.
+	push bc
 	call CopyMenuHeader
 	pop bc
-
-.okay
 	ld a, b
 	ld [wMenuBorderLeftCoord], a
 	add 5
@@ -359,27 +381,16 @@ PlaceYesNoBox::
 	add 4
 	ld [wMenuBorderBottomCoord], a
 	call PushWindow
-	; fallthrough
-
-InterpretTwoOptionMenu::
 	call VerticalMenu
 	push af
 	ld c, 15
 	call DelayFrames
 	call CloseWindow
-InterpretTwoOptionMenu_AfterCloseWindow::
 	pop af
-	jr c, .no
+	ret c
 	ld a, [wMenuCursorY]
-	cp 2 ; no
-	jr z, .no
-	and a
-	ret
-
-.no
-	ld a, 2
-	ld [wMenuCursorY], a
-	scf
+	dec a
+	dec a
 	ret
 
 YesNoMenuDataHeader::
@@ -395,9 +406,22 @@ YesNoMenuDataHeader::
 	db "Yes@"
 	db "No@"
 
+NoYesMenuDataHeader::
+	db $40 ; tile backup
+	db  7, 14 ; start coords
+	db 11, 19 ; end coords
+	dw .MenuData2
+	db 1 ; default option
+
+.MenuData2
+	db $c0 ; flags
+	db 2
+	db "No@"
+	db "Yes@"
+
 OffsetMenuDataHeader::
 	call _OffsetMenuDataHeader
-	jp PushWindow
+	jmp PushWindow
 
 _OffsetMenuDataHeader::
 	push de
@@ -429,7 +453,7 @@ DoNthMenu::
 	call InitMenuCursorAndButtonPermissions
 	call GetStaticMenuJoypad
 	call GetMenuJoypad
-	jp MenuClickSound
+	jmp MenuClickSound
 
 SetUpMenu::
 	call DrawVariableLengthMenuBox ; ???
@@ -443,7 +467,7 @@ DrawVariableLengthMenuBox::
 	call CopyMenuData2
 	call GetMenuIndexSet
 	call AutomaticGetMenuBottomCoord
-	jp MenuBox
+	jmp MenuBox
 
 SetUpVariableDataMenu:
 	ld hl, wMenuFlags
@@ -630,7 +654,7 @@ PlaceNthMenuStrings::
 MenuJumptable::
 	ld a, [wMenuSelection]
 	call GetMenuDataPointerTableEntry
-	jp IndirectHL
+	jmp IndirectHL
 
 GetMenuDataPointerTableEntry::
 	ld e, a
@@ -700,7 +724,7 @@ PlayClickSFX::
 MenuTextboxWaitButton::
 	call MenuTextbox
 	call WaitButton
-	jp ExitMenu
+	jmp ExitMenu
 
 _2DMenu::
 	ldh a, [hROMBank]

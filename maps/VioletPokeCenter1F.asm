@@ -46,18 +46,15 @@ VioletPokeCenter1FElmsAideScript:
 	checkevent EVENT_REFUSED_TO_TAKE_EGG_FROM_ELMS_AIDE
 	iftrue .SecondTimeAsking
 	writetext .IntroText
-	jump .AskTakeEgg
+	sjump .AskTakeEgg
 .SecondTimeAsking:
 	writetext .QuestionText
 .AskTakeEgg:
 	yesorno
 	iffalse .RefusedEgg
-	checkcode VAR_PARTYCOUNT
-	ifequal PARTY_LENGTH, .PartyFull
-	giveegg TOGEPI, EGG_LEVEL
-	farwritetext _ReceivedEggText
-	playsound SFX_GET_EGG_FROM_DAYCARE_LADY
-	waitsfx
+	readvar VAR_PARTYCOUNT
+	giveegg TOGEPI
+	iffalse_jumpopenedtext .PartyAndBoxFull
 	setevent EVENT_GOT_TOGEPI_EGG_FROM_ELMS_AIDE
 	clearevent EVENT_ELMS_AIDE_IN_LAB
 	clearevent EVENT_TOGEPI_HATCHED
@@ -65,11 +62,11 @@ VioletPokeCenter1FElmsAideScript:
 	writetext .GoodbyeText
 	waitbutton
 	closetext
-	checkcode VAR_FACING
+	readvar VAR_FACING
 	ifequal UP, .AideWalksAroundPlayer
 	turnobject PLAYER, DOWN
 	applymovement VIOLETPOKECENTER1F_SCIENTIST, .WalkStraightMovement
-	jump .Finish
+	sjump .Finish
 .AideWalksAroundPlayer:
 	applymovement VIOLETPOKECENTER1F_SCIENTIST, .WalkAroundMovement
 	turnobject PLAYER, DOWN
@@ -80,12 +77,13 @@ VioletPokeCenter1FElmsAideScript:
 	waitsfx
 	end
 
-.PartyFull:
-	jumpthisopenedtext
-
+.PartyAndBoxFull:
 	text "Oh, no. You can't"
 	line "carry any more"
 	cont "#mon with you."
+
+	para "You have no space"
+	line "in your box, too."
 
 	para "I'll wait here"
 	line "while you make"

@@ -77,11 +77,6 @@ TrainerCard:
 	dw TrainerCard_Page3_Joypad
 	dw TrainerCard_Quit
 
-TrainerCard_IncrementJumptable:
-	ld hl, wJumptableIndex
-	inc [hl]
-	ret
-
 TrainerCard_Quit:
 	ld hl, wJumptableIndex
 	set 7, [hl]
@@ -101,17 +96,21 @@ TrainerCard_Page1_LoadGFX:
 	call TrainerCard_LoadHeaderGFX
 
 	call TrainerCard_Page1_PrintDexCaught_GameTime
-	jp TrainerCard_IncrementJumptable
+	; fallthrough
+
+TrainerCard_IncrementJumptable:
+	ld hl, wJumptableIndex
+	inc [hl]
+	ret
 
 TrainerCard_Page1_Joypad:
 	call TrainerCard_Page1_PrintGameTime
 	ld hl, hJoyLast
 	ld a, [hl]
 	and D_RIGHT | A_BUTTON
-	jr nz, .pressed_right_a
-	ret
+	ret z
 
-.pressed_right_a
+; pressed_right_or_a
 	ld a, $2
 	ld [wJumptableIndex], a
 	ret
@@ -141,7 +140,7 @@ TrainerCard_Page2_LoadGFX:
 
 	ld hl, TrainerCard_JohtoBadgesOAM
 	call TrainerCard_Page2_3_InitObjectsAndStrings
-	jp TrainerCard_IncrementJumptable
+	jr TrainerCard_IncrementJumptable
 
 TrainerCard_Page2_Joypad:
 	ld hl, TrainerCard_JohtoBadgesOAM
@@ -155,7 +154,11 @@ TrainerCard_Page2_Joypad:
 	jr nz, .pressed_a
 	ld a, [hl]
 	and D_LEFT
-	jr nz, .d_left
+	ret z
+
+; pressed_left
+	xor a
+	ld [wJumptableIndex], a
 	ret
 
 .pressed_right
@@ -176,11 +179,6 @@ TrainerCard_Page2_Joypad:
 
 .quit
 	ld a, $6
-	ld [wJumptableIndex], a
-	ret
-
-.d_left
-	xor a
 	ld [wJumptableIndex], a
 	ret
 
@@ -209,7 +207,7 @@ TrainerCard_Page3_LoadGFX:
 
 	ld hl, TrainerCard_KantoBadgesOAM
 	call TrainerCard_Page2_3_InitObjectsAndStrings
-	jp TrainerCard_IncrementJumptable
+	jmp TrainerCard_IncrementJumptable
 
 TrainerCard_Page3_Joypad:
 	ld hl, TrainerCard_KantoBadgesOAM
@@ -220,7 +218,11 @@ TrainerCard_Page3_Joypad:
 	jr nz, .quit
 	ld a, [hl]
 	and D_LEFT
-	jr nz, .d_left
+	ret z
+
+; pressed_left
+	ld a, $2
+	ld [wJumptableIndex], a
 	ret
 
 .quit
@@ -228,15 +230,10 @@ TrainerCard_Page3_Joypad:
 	ld [wJumptableIndex], a
 	ret
 
-.d_left
-	ld a, $2
-	ld [wJumptableIndex], a
-	ret
-
 TrainerCard_LoadHeaderGFX:
 	ld hl, vTiles2 tile $29
 	lb bc, BANK(CardStatusGFX), $4 ; BANK(CardBadgesGFX)
-	jp Request2bpp
+	jmp Request2bpp
 
 TrainerCard_PrintBorder:
 	hlcoord 0, 0
@@ -338,7 +335,7 @@ TrainerCard_PrintTopHalfOfCard:
 	dec c
 .print_money
 	ld de, wMoney
-	jp PrintNum
+	jmp PrintNum
 
 .Top_Headings:
 	db "┐Name/<LNBRK>"
@@ -350,7 +347,7 @@ TrainerCard_PrintTopHalfOfCard:
 TrainerCardSetup_ClearBottomHalf:
 	hlcoord 1, 10
 	lb bc, 7, 18
-	jp ClearBox
+	jmp ClearBox
 
 TrainerCard_Page1_PrintDexCaught_GameTime:
 	hlcoord 2, 10
@@ -360,7 +357,7 @@ TrainerCard_Page1_PrintDexCaught_GameTime:
 	ld hl, wPokedexCaught
 	ld b, wEndPokedexCaught - wPokedexCaught
 	call CountSetBits
-	ld de, wd265
+	ld de, wNumSetBits
 	hlcoord 15, 10
 	lb bc, 1, 3
 	call PrintNum
@@ -398,7 +395,7 @@ TrainerCard_Page1_PrintDexCaught_GameTime:
 	dec a
 	cp -1
 	ret z
-	ld [hl], $28
+	ld [hl], $28 ; no-optimize *hl++|*hl-- = N
 	inc hl
 	jr .star_loop
 
@@ -457,7 +454,7 @@ endr
 	xor a
 	ld [wTrainerCardBadgeFrameCounter], a
 	pop hl
-	jp TrainerCard_Page2_3_OAMUpdate
+	jr TrainerCard_Page2_3_OAMUpdate
 
 TrainerCard_Page2_3_PlaceLeadersFaces:
 	push de

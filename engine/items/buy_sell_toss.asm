@@ -210,8 +210,8 @@ BuySellToss_UpdateQuantityDisplay:
 	call MenuBoxCoord2Tile
 	ld de, SCREEN_WIDTH + 1
 	add hl, de
-	ld [hl], "×"
-	inc hl
+	ld a, "×"
+	ld [hli], a
 	ld de, wItemQuantityChangeBuffer
 	lb bc, PRINTNUM_LEADINGZEROS | 1, 2
 	call PrintNum
@@ -221,16 +221,34 @@ BuySellToss_UpdateQuantityDisplay:
 	ld a, [wMenuDataPointer + 1]
 	ld d, a
 	ld a, [wMenuDataBank]
-	jp FarCall_de
+	jmp FarCall_de
 
 DisplayPurchasePrice:
 	call BuySell_MultiplyPrice
-	jp BuySell_DisplaySubtotal
+	jr BuySell_DisplaySubtotal
 
 DisplaySellingPrice:
 	call BuySell_MultiplyPrice
-	call Sell_HalvePrice
-	jp BuySell_DisplaySubtotal
+	; halve price
+	push hl
+	ld hl, hProduct + 1
+	ld a, [hl]
+	srl a
+	ld [hli], a
+	ld a, [hl]
+	rra
+	ld [hli], a
+	ld a, [hl]
+	rra
+	ld [hl], a
+	pop hl
+	; fallthrough
+
+BuySell_DisplaySubtotal:
+	call DisplayPurchasePriceCommon
+	lb bc, PRINTNUM_MONEY | 3, 7
+	call PrintNum
+	jmp ApplyTilemapInVBlank
 
 BuySell_MultiplyPrice:
 	xor a
@@ -246,27 +264,6 @@ BuySell_MultiplyPrice:
 	pop hl
 	ret
 
-Sell_HalvePrice:
-	push hl
-	ld hl, hProduct + 1
-	ld a, [hl]
-	srl a
-	ld [hli], a
-	ld a, [hl]
-	rra
-	ld [hli], a
-	ld a, [hl]
-	rra
-	ld [hl], a
-	pop hl
-	ret
-
-BuySell_DisplaySubtotal:
-	call DisplayPurchasePriceCommon
-	lb bc, PRINTNUM_MONEY | 3, 7
-	call PrintNum
-	jp ApplyTilemapInVBlank
-
 BTDisplayPurchaseCost:
 	call BuySell_MultiplyPrice
 	call DisplayPurchasePriceCommon
@@ -274,7 +271,7 @@ BTDisplayPurchaseCost:
 	call PrintNum
 	ld de, .BPString
 	rst PlaceString
-	jp ApplyTilemapInVBlank
+	jmp ApplyTilemapInVBlank
 
 .BPString:
 	db " BP@"

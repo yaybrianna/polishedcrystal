@@ -7,7 +7,7 @@
 	charmap "<WAIT>",   $02
 	charmap "<ASM>",    $03
 	charmap "<NUM>",    $04
-	charmap "<EXIT>",   $05
+	charmap "<PAUSE>",  $05
 	charmap "<SOUND>",  $06
 	charmap "<DAY>",    $07
 	charmap "<FAR>",    $08
@@ -57,6 +57,8 @@ BATTLEEXTRA_GFX_START EQU $5f
 	charmap "<XPEND>",  $7e
 
 ; Actual characters
+
+FIRST_REGULAR_TEXT_CHAR EQU $7f
 
 ; map tiles:
 
@@ -299,9 +301,6 @@ NGRAMS_END EQU $52
 
 rawchar: MACRO
 	setcharmap no_ngrams
-	rept _NARG
-		db \1
-		shift
-	endr
+	db \#
 	setcharmap default
 ENDM

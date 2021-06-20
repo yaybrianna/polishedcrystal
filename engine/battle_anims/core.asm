@@ -1,3 +1,9 @@
+DeinitBattleAnimation:
+	ld hl, BATTLEANIMSTRUCT_INDEX
+	add hl, bc
+	ld [hl], $0
+	ret
+
 QueueBattleAnimation:
 	ld hl, wActiveAnimObjects
 	ld e, NUM_ANIM_OBJECTS
@@ -17,13 +23,7 @@ QueueBattleAnimation:
 	ld b, h
 	ld hl, wLastAnimObjectIndex
 	inc [hl]
-	jp InitBattleAnimation
-
-DeinitBattleAnimation:
-	ld hl, BATTLEANIMSTRUCT_INDEX
-	add hl, bc
-	ld [hl], $0
-	ret
+	; fallthrough
 
 InitBattleAnimation:
 	ld a, [wBattleAnimTemp0]
@@ -80,9 +80,9 @@ BattleAnimOAMUpdate:
 	call InitBattleAnimBuffer
 	call GetBattleAnimFrame
 	cp -3
-	jp z, .done
+	jmp z, .done
 	cp -4
-	jp z, .delete
+	jmp z, .delete
 	push af
 	ld hl, wBattleAnimTempOAMFlags
 	ld a, [wBattleAnimTemp7]
@@ -189,7 +189,7 @@ BattleAnimOAMUpdate:
 	ret
 
 InitBattleAnimBuffer:
-	ld hl, BATTLEANIMSTRUCT_01
+	ld hl, BATTLEANIMSTRUCT_OAMFLAGS
 	add hl, bc
 	ld a, [hl]
 	and %10000000
@@ -200,7 +200,7 @@ InitBattleAnimBuffer:
 	add hl, bc
 	ld a, [hl]
 	ld [wBattleAnimTempPalette], a
-	ld hl, BATTLEANIMSTRUCT_02
+	ld hl, BATTLEANIMSTRUCT_FIX_Y
 	add hl, bc
 	ld a, [hl]
 	ld [wBattleAnimTemp1], a
@@ -219,7 +219,7 @@ InitBattleAnimBuffer:
 	ldh a, [hBattleTurn]
 	and a
 	ret z
-	ld hl, BATTLEANIMSTRUCT_01
+	ld hl, BATTLEANIMSTRUCT_OAMFLAGS
 	add hl, bc
 	ld a, [hl]
 	ld [wBattleAnimTempOAMFlags], a

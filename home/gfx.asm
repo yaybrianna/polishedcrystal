@@ -57,7 +57,7 @@ Request2bppInWRA6::
 Get2bpp::
 	ldh a, [rLCDC]
 	bit 7, a ; lcd on?
-	jp nz, Request2bpp
+	jr nz, Request2bpp
 
 Copy2bpp::
 ; copy c 2bpp tiles from b:de to hl
@@ -66,7 +66,7 @@ Copy2bpp::
 .Function:
 	call WriteVCopyRegistersToHRAM
 	ld b, c
-	jp _Serve2bppRequest
+	jmp _Serve2bppRequest
 
 Request2bpp::
 ; Load 2bpp at b:de to occupy c tiles of hl.
@@ -163,7 +163,7 @@ _Copy1bpp::
 .Function:
 	call WriteVCopyRegistersToHRAM
 	ld b, c
-	jp _Serve1bppRequest
+	jmp _Serve1bppRequest
 
 RequestOpaque1bpp:
 	ld a, 1
@@ -364,7 +364,7 @@ VRAMToVRAMCopy::
 .outerLoop2
 	ldh a, [rLY]
 	cp $88
-	jp nc, ContinueHBlankCopy
+	jr nc, ContinueHBlankCopy
 .waitNoHBlank2
 	ldh a, [c]
 	and b
@@ -387,4 +387,4 @@ endr
 	dec a
 	ldh [hTilesPerCycle], a
 	jr nz, .outerLoop2
-	jp DoneHBlankCopy
+	jr DoneHBlankCopy

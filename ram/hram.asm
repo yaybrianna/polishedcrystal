@@ -164,12 +164,17 @@ hRandomSub:: db
 
 hSecondsBackup:: db
 
-hChartScreen::
+UNION
 ; 0 - player
 ; 1 - opponent trainer
 hBattleTurn:: db
-
 hBattlePalFadeMode:: db
+hTimeOfDayPalOffset:: db
+NEXTU
+hChartScreen:: db
+hChartFillCoord:: db
+hChartLineCoord:: db
+ENDU
 
 hCGBPalUpdate:: db
 hCGB::          db
@@ -191,8 +196,6 @@ hRequestedVTileDest::   dw
 hRequestedVTileSource:: dw
 hRequestOpaque1bpp::    db
 
-hTimeOfDayPalOffset:: db
-
 UNION
 hTmpd:: db
 hTmpe:: db
@@ -209,7 +212,7 @@ hCrashCode:: db
 
 hAppendVWFText:: ds 4
 
-hFunction::
+hLCDInterruptFunction::
 hFunctionJump::     db ; $c3 jp
 hFunctionTarget::
 hFunctionTargetLo:: db ; LOW(target)

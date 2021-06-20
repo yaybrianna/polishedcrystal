@@ -26,7 +26,7 @@ EcruteakPokeCenter1F_MapScriptHeader:
 	const ECRUTEAKPOKECENTER1F_BILL
 
 EcruteakPokeCenter1FBillWalksUpTrigger:
-	priorityjump .Script
+	sdefer .Script
 	end
 
 .Script:
@@ -100,23 +100,18 @@ EcruteakPokeCenter1FBillScript:
 	yesorno
 	iffalse_jumpopenedtext .NoText
 	writetext .YesText
-	buttonsound
+	promptbutton
 	waitsfx
-	checkcode VAR_PARTYCOUNT
-	ifequal $6, .NoRoom
-	writetext .GotEeveeText
-	playsound SFX_CAUGHT_MON
-	waitsfx
-	givepoke EEVEE, 5
-	givepokeitem .GiftEeveeMail
+	readvar VAR_PARTYCOUNT
+	ifequal PARTY_LENGTH, .NoRoom
+	givepoke EEVEE, NO_FORM, 5, NO_ITEM, GREAT_BALL
+	givepokemail .GiftEeveeMail
 	callasm .SetEeveeMailOT
-	writebyte GREAT_BALL
-	special SetLastPartyMonBall
 	setevent EVENT_GOT_EEVEE
 	writetext .GoodbyeText
 	waitbutton
 	closetext
-	checkcode VAR_FACING
+	readvar VAR_FACING
 	turnobject PLAYER, DOWN
 	ifnotequal UP, .noleftstep
 	applyonemovement ECRUTEAKPOKECENTER1F_BILL, step_left
@@ -183,11 +178,6 @@ EcruteakPokeCenter1FBillScript:
 	line "it!"
 	done
 
-.GotEeveeText:
-	text "<PLAYER> received"
-	line "Eevee!"
-	done
-
 .GoodbyeText:
 	text "Bill: Prof.Elm"
 	line "claims Eevee may"
@@ -235,7 +225,7 @@ EcruteakPokeCenter1FBillScript:
 	ld a, BANK(sPartyMail)
 	call GetSRAMBank
 	rst CopyBytes
-	jp CloseSRAM
+	jmp CloseSRAM
 
 .EeveeMailOTID:
 	rawchar "Prof.Oak@@"

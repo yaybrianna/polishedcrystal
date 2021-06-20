@@ -1,17 +1,9 @@
 ; Pic animation arrangement.
 
 POKEANIM: MACRO
-	rept _NARG
-
-; Workaround for a bug where MACRO args can't come after the start of a symbol
-if !def(\1_POKEANIM)
-\1_POKEANIM equs "PokeAnim_\1_"
-endc
-
-	db (\1_POKEANIM - PokeAnim_SetupCommands) / 2
-	shift
-	endr
-
+for i, 1, _NARG + 1
+	db (PokeAnim_\<i>_ - PokeAnim_SetupCommands) / 2
+endr
 	db (PokeAnim_Finish_ - PokeAnim_SetupCommands) / 2
 ENDM
 
@@ -331,7 +323,7 @@ PokeAnim_DoAnimScript:
 	dec a
 	ld [wPokeAnimWaitCounter], a
 	ret nz
-	jp PokeAnim_StopWaitAnim
+	jr PokeAnim_StopWaitAnim
 
 .SetRepeat:
 	ld a, [wPokeAnimParameter]
@@ -381,7 +373,7 @@ PokeAnim_GetFrame:
 	push hl
 	call PokeAnim_CopyBitmaskToBuffer
 	pop hl
-	jp PokeAnim_ConvertAndApplyBitmask
+	jmp PokeAnim_ConvertAndApplyBitmask
 
 PokeAnim_StartWaitAnim:
 	ld a, [wPokeAnimJumptableIndex]
@@ -407,7 +399,7 @@ PokeAnim_GetPointer:
 	add hl, de
 	add hl, de
 	ld a, [wPokeAnimPointerBank]
-	call GetFarHalfword
+	call GetFarWord
 	ld a, l
 	ld [wPokeAnimCommand], a
 	ld a, h
@@ -429,7 +421,7 @@ PokeAnim_GetBitmaskIndex:
 	add hl, bc
 	add hl, bc
 	ld a, [wPokeAnimFramesBank]
-	call GetFarHalfword
+	call GetFarWord
 	ld a, [wPokeAnimFramesBank]
 	call GetFarByte
 	ld [wPokeAnimCurBitmask], a
@@ -448,7 +440,7 @@ PokeAnim_CopyBitmaskToBuffer:
 	pop bc
 	ld de, wPokeAnimBitmaskBuffer
 	ld a, [wPokeAnimBitmaskBank]
-	jp FarCopyBytes
+	jmp FarCopyBytes
 
 .GetSize:
 	push hl
@@ -548,22 +540,21 @@ PokeAnim_ConvertAndApplyBitmask:
 	rst AddNTimes
 	ld a, [wBoxAlignment]
 	and a
-	jr nz, .go
 	ld a, [wPokeAnimBitmaskCurCol]
 	ld e, a
+	jr nz, .subtract
+	; hl += [wPokeAnimBitmaskCurCol]
 	ld d, 0
 	add hl, de
 	ret
 
-.go
-	ld a, [wPokeAnimBitmaskCurCol]
-	ld e, a
+.subtract
+	; hl -= [wPokeAnimBitmaskCurCol]
 	ld a, l
 	sub e
 	ld l, a
-	ld a, h
-	sbc 0
-	ld h, a
+	ret nc
+	dec h
 	ret
 
 .GetTilemap:
@@ -615,14 +606,10 @@ PokeAnim_ConvertAndApplyBitmask:
 	ret
 
 poke_anim_box: MACRO
-y = 7
-rept \1
-x = 7 - \1
-rept \1
+for y, 7, 7 * (\1 + 1), 7
+for x, 7 - \1, 7
 	db x + y
-x = x + 1
 endr
-y = y + 7
 endr
 ENDM
 
@@ -742,7 +729,7 @@ PokeAnim_PlaceGraphic:
 	ld h, [hl]
 	ld l, a
 	lb bc, 7, 7
-	jp ClearBox
+	jmp ClearBox
 
 PokeAnim_SetVBank1:
 	ldh a, [rSVBK]
@@ -831,7 +818,7 @@ GetMonAnimDataIndex:
 	ld a, [wPokeAnimVariant]
 	ld b, a
 	; bc = index
-	jp GetCosmeticSpeciesAndFormIndex
+	jmp GetCosmeticSpeciesAndFormIndex
 
 GetMonAnimPointer:
 	call GetMonAnimDataIndex
@@ -847,7 +834,7 @@ GetMonAnimPointer:
 	add hl, bc
 	add hl, bc
 	ld [wPokeAnimPointerBank], a
-	call GetFarHalfword
+	call GetFarWord
 	ld a, l
 	ld [wPokeAnimPointerAddr], a
 	ld a, h
@@ -861,7 +848,7 @@ GetMonFramesPointer:
 	add hl, bc
 	add hl, bc
 	ld a, BANK(FramesPointers)
-	call GetFarHalfword
+	call GetFarWord
 	ld a, l
 	ld [wPokeAnimFramesAddr], a
 	ld a, h
@@ -883,7 +870,7 @@ GetMonBitmaskPointer:
 	add hl, bc
 	ld a, BANK(BitmasksPointers)
 	ld [wPokeAnimBitmaskBank], a
-	call GetFarHalfword
+	call GetFarWord
 	ld a, l
 	ld [wPokeAnimBitmaskAddr], a
 	ld a, h

@@ -106,7 +106,7 @@ Elevator_GoToFloor:
 	ld de, wBackupWarpNumber
 	ld a, [wElevatorPointerBank]
 	ld bc, 3
-	jp FarCopyBytes
+	jmp FarCopyBytes
 
 Elevator_AskWhichFloor:
 	call LoadStandardMenuHeader
@@ -134,7 +134,7 @@ Elevator_AskWhichFloor:
 
 Elevator_WhichFloorText:
 	; Which floor?
-	text_jump _AskFloorElevatorText
+	text_far _AskFloorElevatorText
 	text_end
 
 Elevator_GetCurrentFloorText:
@@ -166,7 +166,7 @@ Elevator_GetCurrentFloorString:
 	add hl, de
 	ld a, [hl]
 	pop de
-	jp GetFloorString
+	jr GetFloorString
 
 Elevator_MenuDataHeader:
 	db $40 ; flags
@@ -180,12 +180,13 @@ Elevator_MenuData2:
 	db 4, 0 ; rows, columns
 	db 1 ; horizontal spacing
 	dbw 0, wCurElevator
-	dba GetElevatorFlorStrings
+	dba .GetElevatorFloorStrings
 	dba NULL
 	dba NULL
 
-GetElevatorFlorStrings:
+.GetElevatorFloorStrings:
 	ld a, [wMenuSelection]
+	; fallthrough
 GetFloorString:
 	push de
 	call FloorToString

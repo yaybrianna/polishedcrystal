@@ -16,8 +16,8 @@ Route3_MapScriptHeader:
 	bg_event  8, 15, BGEVENT_JUMPTEXT, Route3MeteoriteText
 	bg_event  8, 17, BGEVENT_JUMPTEXT, Route3MeteoriteText
 	bg_event  9, 17, BGEVENT_JUMPTEXT, Route3MeteoriteText
-	bg_event 14, 15, BGEVENT_JUMPTEXT, Route3MeteoriteText
-	bg_event 15, 16, BGEVENT_JUMPTEXT, Route3MeteoriteText
+	bg_event 12, 15, BGEVENT_JUMPTEXT, Route3MeteoriteText
+	bg_event 14, 17, BGEVENT_JUMPTEXT, Route3MeteoriteText
 	bg_event 15, 17, BGEVENT_JUMPTEXT, Route3MeteoriteText
 
 	def_object_events
@@ -36,7 +36,7 @@ Route3_MapScriptHeader:
 
 Route3FlyPoint:
 	setflag ENGINE_FLYPOINT_MT_MOON
-	return
+	endcallback
 
 GenericTrainerYoungsterRegis:
 	generictrainer YOUNGSTER, REGIS, EVENT_BEAT_YOUNGSTER_REGIS, .SeenText, .BeatenText

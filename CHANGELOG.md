@@ -54,6 +54,7 @@ These changes have been made since the current 2.2.0 release. If you build the p
 * Add: Replace Triple Kick with Drain Punch.
 * Add: Replace Lock-On with Power Whip.
 * Add: Replace Flail with Gyro Ball.
+* Add: Replace Flame Wheel with Flame Charge.
 * Add: Replace Moonlight and Morning Sun with Knock Off and "HealingLight".
 * Add: Replace Fury Attack and Fury Cutter with Trick and "Fury Strikes".
 * Add: Giga Impact.
@@ -65,7 +66,7 @@ These changes have been made since the current 2.2.0 release. If you build the p
 * Add: Grass-type Pokémon are immune to PoisonPowder, Stun Spore, Sleep Powder, and Spore.
 * Add: Marowak is Ground/Ghost.
 * Add: Charizard is Fire/Dragon.
-* Add: Yanma is Bug/Dragon.
+* Add: Yanmega is Bug/Dragon.
 * Add: Ampharos is Electric/Dragon.
 * Add: Noctowl is Ghost/Flying.
 * Add: Bellossom is Grass/Fairy.
@@ -150,6 +151,7 @@ These changes have been made since the current 2.2.0 release. If you build the p
 * Add: Instant text option.
 * Add: Imperial or metric units.
 * Add: 12-hour or 24-hour clock.
+* Add: ABC or QWERTY keyboard.
 * Add: Item icons in the Bag.
 * Add: Thrown Balls use individual icons.
 * Add: Pokédex shows shiny palettes after getting the Shiny Charm.

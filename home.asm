@@ -42,6 +42,7 @@ INCLUDE "home/clear_sprites.asm"
 INCLUDE "home/copy.asm"
 INCLUDE "home/copy_tilemap.asm"
 INCLUDE "home/copy_name.asm"
+INCLUDE "home/copy_rle.asm"
 INCLUDE "home/array.asm"
 INCLUDE "home/math.asm"
 INCLUDE "home/print_text.asm"
@@ -60,12 +61,14 @@ INCLUDE "home/battle.asm"
 INCLUDE "home/sprite_anims.asm"
 INCLUDE "home/audio.asm"
 INCLUDE "home/restore_music.asm"
+INCLUDE "home/vba.asm"
 
 ; data used within home
+INCLUDE "audio/alternate_music.asm"
 INCLUDE "data/text/ngrams.asm"
 INCLUDE "data/pokemon/variant_forms.asm"
 INCLUDE "data/moves/hm_moves.asm"
-INCLUDE "data/maps/music.asm"
+INCLUDE "data/maps/special_music.asm"
 
 ; data used in multiple banks, or one full bank, outside home
 INCLUDE "data/pokemon/legendary_mons.asm"

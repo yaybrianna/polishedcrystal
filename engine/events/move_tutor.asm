@@ -11,7 +11,7 @@ Special_MoveTutor:
 	and a
 	ld [wPutativeTMHMMove], a
 	jr z, .relearner
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetMoveName
 	call CopyName1
 .relearner
@@ -32,7 +32,7 @@ Special_MoveTutor:
 	ld a, -1
 .quit
 	ldh [hScriptVar], a
-	jp CloseSubmenu
+	jmp CloseSubmenu
 
 CheckCanLearnMoveTutorMove:
 	ld hl, .MenuDataHeader
@@ -41,14 +41,14 @@ CheckCanLearnMoveTutorMove:
 	ld a, MON_FORM
 	call GetPartyParamLocation
 	ld a, [hl]
-	and BASEMON_MASK
+	and SPECIESFORM_MASK
 	ld [wCurForm], a
 	predef CanLearnTMHMMove
 
 	push bc
 	ld a, [wCurPartyMon]
 	ld hl, wPartyMonNicknames
-	call GetNick
+	call GetNickname
 	pop bc
 
 	ld a, c
@@ -96,7 +96,7 @@ CheckCanLearnMoveTutorMove:
 	jr z, .didnt_learn
 	ld a, [wMoveScreenSelectedMove]
 	ld [wPutativeTMHMMove], a
-	ld [wNamedObjectIndexBuffer], a
+	ld [wNamedObjectIndex], a
 	call GetMoveName
 	call CopyName1
 	predef LearnMove

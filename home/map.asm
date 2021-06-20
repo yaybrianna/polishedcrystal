@@ -97,7 +97,7 @@ CheckWarpTile::
 WarpCheck::
 	call GetDestinationWarpNumber
 	ret nc
-	jp CopyWarpData
+	jr CopyWarpData
 
 GetDestinationWarpNumber::
 	farcall CheckWarpCollision
@@ -288,9 +288,9 @@ ReadObjectEvents::
 ; Fill the remaining sprite IDs and y coords with 0 and -1, respectively.
 	ld bc, MAPOBJECT_LENGTH
 .loop
-	ld [hl],  0
+	ld [hl],  0 ; no-optimize *hl++|*hl-- = N
 	inc hl
-	ld [hl], -1
+	ld [hl], -1 ; no-optimize *hl++|*hl-- = N
 	dec hl
 	add hl, bc
 	dec a
@@ -549,7 +549,7 @@ ChangeMap::
 
 .Function:
 	push de
-	call FarDecompressAtB_D000
+	call FarDecompressInB
 	pop de
 
 	ld a, d
@@ -1102,7 +1102,7 @@ _LoadTilesetGFX1:
 	; fallthrough
 
 _DoLoadTilesetGFX:
-	ld c, $80
+	ld c, $7f
 _DoLoadTilesetGFX0:
 	ld b, a
 	ld a, [hli]
@@ -1119,7 +1119,7 @@ _DoLoadTilesetGFX0:
 	inc c
 	jr z, .special_load
 	dec c
-	jp DecompressRequest2bpp
+	jmp DecompressRequest2bpp
 
 .special_load
 	; Skip roof tiles when writing to VRAM
@@ -1135,7 +1135,7 @@ _DoLoadTilesetGFX0:
 	ld de, wDecompressScratch tile $13
 	ld hl, vTiles2 tile $13
 	ld c, $6c ; write tiles $13-$7e
-	jp Request2bppInWRA6
+	jmp Request2bppInWRA6
 
 LoadTilesetGFX::
 	xor a
@@ -1317,7 +1317,7 @@ GetMovementPermissions::
 	dec e
 	call GetCoordTile
 	ld [wTileUp], a
-	jp .Up
+	jr .Up
 
 .LeftRight:
 	ld a, [wPlayerStandingMapX]
@@ -1335,7 +1335,7 @@ GetMovementPermissions::
 	inc d
 	call GetCoordTile
 	ld [wTileRight], a
-	jp .Right
+	jr .Right
 
 .Down:
 	call .CheckHiNybble
@@ -1476,7 +1476,7 @@ GetCoordTile::
 
 .nocarry2
 	ld a, BANK(wDecompressedCollisions)
-	jp GetFarWRAMByte
+	jmp GetFarWRAMByte
 
 GetBlockLocation::
 	ld a, [wMapWidth]
@@ -1647,7 +1647,7 @@ FadeToMenu::
 	call LoadStandardMenuHeader
 	farcall FadeOutPalettes
 	call ClearSprites
-	jp DisableSpriteUpdates
+	jmp DisableSpriteUpdates
 
 CloseSubmenu::
 	call ClearBGPalettes
@@ -1667,7 +1667,7 @@ FinishExitMenu::
 	farcall LoadBlindingFlashPalette
 	call ApplyAttrAndTilemapInVBlank
 	farcall FadeInPalettes
-	jp EnableSpriteUpdates
+	jmp EnableSpriteUpdates
 
 ReturnToMapWithSpeechTextbox::
 	push af
@@ -1714,7 +1714,7 @@ ReloadTilesetAndPalettes::
 	pop af
 	rst Bankswitch
 
-	jp EnableLCD
+	jmp EnableLCD
 
 GetMapPointer::
 	ld a, [wMapGroup]
@@ -1867,7 +1867,7 @@ GetMapEnvironment::
 	ld de, MAP_ENVIRONMENT
 	call GetMapField
 	ld a, c
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 GetAnyMapEnvironment::
 	push hl
@@ -1876,13 +1876,31 @@ GetAnyMapEnvironment::
 	ld de, MAP_ENVIRONMENT
 	call GetAnyMapField
 	ld a, c
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 GetAnyMapTileset::
 	ld de, MAP_TILESET
 	call GetAnyMapField
 	ld a, c
 	ret
+
+GetCurrentLandmark::
+	ld a, [wMapGroup]
+	ld b, a
+	ld a, [wMapNumber]
+	ld c, a
+	call GetWorldMapLocation
+	and a ; cp SPECIAL_MAP
+	ret nz
+	; fallthrough
+
+; In a special map, get the backup map group / map id
+GetBackupLandmark::
+	ld a, [wBackupMapGroup]
+	ld b, a
+	ld a, [wBackupMapNumber]
+	ld c, a
+	; fallthrough
 
 GetWorldMapLocation::
 ; given a map group/id in bc, return its location on the Pokégear map.
@@ -1893,24 +1911,7 @@ GetWorldMapLocation::
 	ld de, MAP_LOCATION
 	call GetAnyMapField
 	ld a, c
-	jp PopBCDEHL
-
-GetCurrentLandmark::
-	ld a, [wMapGroup]
-	ld b, a
-	ld a, [wMapNumber]
-	ld c, a
-	call GetWorldMapLocation
-	and a ; cp SPECIAL_MAP
-	ret nz
-
-; In a special map, get the backup map group / map id
-GetBackupLandmark::
-	ld a, [wBackupMapGroup]
-	ld b, a
-	ld a, [wBackupMapNumber]
-	ld c, a
-	jp GetWorldMapLocation
+	jmp PopBCDEHL
 
 RandomRegionCheck::
 ; Returns current region, like RegionCheck, except that Mt. Silver and Route 28
@@ -1948,13 +1949,20 @@ GetMapMusic::
 	push bc
 	ld de, MAP_MUSIC
 	call GetMapField
-	ld hl, SpecialMapMusic
-.loop
-	ld a, [hli]
-	and a
-	jr z, .done
-	cp c
-	jr nz, .next
+	ld a, c
+	cp FIRST_ALT_MUSIC
+	jr c, .done
+	; hl = AlternateMusic + ~c * 5
+	cpl
+	ld c, a
+	add a
+	add a
+	add c
+	add LOW(AlternateMusic)
+	ld l, a
+	adc HIGH(AlternateMusic)
+	sub l
+	ld h, a
 	ld a, [hli]
 	ld e, a
 	ld a, [hli]
@@ -1967,19 +1975,12 @@ GetMapMusic::
 	inc hl
 .false
 	ld a, [hl]
-	ld c, a
 .done
-	ld e, c
+	ld e, a
 	ld d, 0
 	pop bc
 	pop hl
 	ret
-
-.next
-rept 5
-	inc hl
-endr
-	jr .loop
 
 GetMapTimeOfDay::
 	call GetPhoneServiceTimeOfDayByte
@@ -2013,7 +2014,7 @@ GetFishingGroup::
 	call GetMapField
 	ld a, c
 
-	jp PopBCDEHL
+	jmp PopBCDEHL
 
 TilesetUnchanged::
 ; returns z if tileset is unchanged from last tileset
