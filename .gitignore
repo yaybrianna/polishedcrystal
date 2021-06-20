@@ -26,3 +26,7 @@ bank_ends.txt
 
 # local tools
 deploy.sh
+
+# local gamesav
+*.rtc
+*.sav
