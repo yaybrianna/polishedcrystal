@@ -370,6 +370,7 @@ GetSpeed::
 	cp HELD_IRON_BALL
 	ln a, 1, 2 ; x0.5
 	jr z, .apply_item_mod
+	ld a, b
 	cp HELD_CHOICE
 	jr nz, .done
 	ld a, c
@@ -3136,14 +3137,14 @@ SpikesDamage_CheckMoldBreaker:
 	call GetOpponentAbilityAfterMoldBreaker
 	ld b, a
 	call SwitchTurn
-	ld c, 1
+	ld c, 0
 	jr SpikesDamage_GotAbility
 SpikesDamage:
 	call GetTrueUserAbility
 	ld b, a
-	ld c, 0
+	ld c, 1
 SpikesDamage_GotAbility:
-; Input: b: ability, c: 1 if forced out, 0 otherwise
+; Input: b: ability, c: 0 if forced out, 1 otherwise
 	push bc
 	call SetParticipant
 	call HandleAirBalloon

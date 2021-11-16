@@ -735,10 +735,10 @@ PoisonTouchAbility:
 	; Poison Touch is the same as an opposing Poison Point, and since
 	; abilities always run from the ability user's POV...
 	; Doesn't apply when opponent has a Substitute up...
-	ld b, 1
+	ld b, 0
 	jr DoPoisonAbility
 PoisonPointAbility:
-	ld b, 0
+	ld b, 1
 	; fallthrough
 DoPoisonAbility:
 	ld hl, CanPoisonTarget
@@ -749,7 +749,7 @@ StaticAbility:
 	ld c, 1 << PAR
 	; fallthrough
 AfflictStatusAbility:
-	ld b, 0
+	ld b, 1
 _AfflictStatusAbility:
 	; Only works 30% of the time.
 	ld a, 10
@@ -1697,6 +1697,10 @@ AteAbilities:
 
 	; change move type
 	ld [hl], b
+
+	; Note that fixing category for the Phys/Spec split option can't be done
+	; here, because this is done after the game has already figured out whether
+	; the move is physical or special.
 	ln a, 6, 5 ; x1.2
 	jmp MultiplyAndDivide
 
