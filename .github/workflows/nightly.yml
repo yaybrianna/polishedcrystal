@@ -27,7 +27,7 @@ env:
 jobs:
   build:
     name: "Nightly"
-    uses: Rangi42/polishedcrystal/.github/workflows/build.yml@master
+    uses: ${{ github.repository }}/.github/workflows/build.yml@master
   release:
     name: "Nightly / Release"
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
       
       # CHECKOUT REPOSITORY
       - id: checkout-polishedcrystal
-        name: "Checkout Rangi42/polishedcrystal"
+        name: "Checkout ${{ github.repository }}"
         uses: actions/checkout@v3
           
       # DOWNLOAD ALL BUILD ARTIFACTS
@@ -118,7 +118,7 @@ jobs:
       - name: Advance nightly tag to master
         run: |
           git tag ${{ env.NIGHTLY_TAG }} -f
-          git push --tags -f "https://Rangi42:$GITHUB_TOKEN@github.com/Rangi42/polishedcrystal.git"
+          git push --tags -f "https://${{ github.repository_owner }}:$GITHUB_TOKEN@github.com/${{ github.repository }}.git"
 
       # CREATE NEW RELEASE
       - name: Create new release
